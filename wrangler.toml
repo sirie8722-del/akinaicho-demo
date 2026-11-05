@@ -1,0 +1,9 @@
+name = "rs-wk"
+main = "build/index.js"
+compatibility_date = "2026-11-01"
+
+[build]
+command = "worker-build --release"
+
+[observability]
+enabled = true

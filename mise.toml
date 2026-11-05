@@ -1,0 +1,37 @@
+min_version = "2026.9.0"
+
+[tools]
+rust = "1.97.1"
+node = "24.22.2"
+
+[tasks.setup]
+description = "WASM ターゲットと依存関係をセットアップする"
+run = [
+  "rustup target add wasm32-unknown-unknown",
+  "cargo install worker-build --version 0.8.7 --locked",
+  "npm install",
+]
+
+[tasks.dev]
+description = "ローカル開発サーバーを起動する"
+run = "npm run dev"
+
+[tasks.build]
+description = "Worker をビルドして dist/ に出力する"
+run = "npm run build"
+
+[tasks.deploy]
+description = "Cloudflare Workers へデプロイする"
+run = "npm run deploy"
+
+[tasks.check]
+description = "型チェック（wasm32 ターゲット）"
+run = "cargo check --target wasm32-unknown-unknown"
+
+[tasks.fmt]
+description = "コードをフォーマットする"
+run = "cargo fmt"
+
+[tasks.clippy]
+description = "Clippy で静的解析する"
+run = "cargo clippy --target wasm32-unknown-unknown -- -D warnings"

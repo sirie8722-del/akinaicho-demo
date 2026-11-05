@@ -1,0 +1,21 @@
+# toolchain / dependencies
+target/
+node_modules/
+
+# wrangler / worker-build
+.wrangler/
+build/
+dist/
+worker-build.toml
+
+# local secrets
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
