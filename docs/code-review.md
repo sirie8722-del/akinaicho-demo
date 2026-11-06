@@ -255,4 +255,8 @@ HTML5 Drag and Drop はタッチ端末では動作せず、キーボード操作
 - `/`、`/styles.css`、`/app.js`: CSP / nosniff / frame-ancestors / no-cache を確認。
 - `/api/quotes`、`/api/dashboard`: `cache-control: no-store` を確認。
 - ブラウザ確認: 外部 CSS / JS 読み込み、コンソールエラーなし、6 KPI・見積 100 件・明細計算を確認。
-- 本番 `/api/health`、`/api/dashboard`、帳票 5 種: `200`（変更前デプロイ時点）。
+- 本番 `/api/health`、`/api/dashboard`、帳票 5 種: `200`。
+- 本番 `/`・`/styles.css`・`/app.js`: external asset / CSP / nosniff / frame-ancestors / no-cache を確認。
+- 本番 `/api/diagnostics`: `DIAGNOSTICS_ENABLED=false` により `404`。
+- 本番 `/api/quotes` の `2026-02-31`: `400`、`/api/closings/preview?month=abcd-01`: `400`。
+- 本番 UI: 6 KPI・見積 100 件・明細計算・集計 5 行、コンソールエラーなし。
