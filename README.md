@@ -1,5 +1,8 @@
 # 商い帖（あきないちょう） — 販売管理システムデモ（Rust / Cloudflare Workers）
 
+[![CI](https://github.com/sirie8722-del/akinaicho-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/sirie8722-del/akinaicho-demo/actions/workflows/ci.yml)
+[![Deploy](https://github.com/sirie8722-del/akinaicho-demo/actions/workflows/deploy.yml/badge.svg)](https://github.com/sirie8722-del/akinaicho-demo/actions/workflows/deploy.yml)
+
 「商い帖」は、見積から受注・売上・入金、発注・仕入・支払、締処理までを一冊の帖（帳簿）にまとめるイメージで名付けた販売管理アプリのデモです。
 
 `C:\Users\LIFE-PC110.LIFE\Desktop\WebRakkaru` の Django PoC から、**見積・受注・売上・入金・発注・仕入・支払・締処理・帳票・集計**を Rust（[workers-rs](https://github.com/cloudflare/workers-rs)）+ Cloudflare Workers に移植したデモです。ランタイムとツールのバージョンは [mise](https://mise.jdx.dev/) で固定しています。
