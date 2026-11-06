@@ -13,6 +13,7 @@ worker-build.toml
 !.dev.vars.example
 .env*
 !.env.example
+cf_info
 
 # OS / editor
 .DS_Store

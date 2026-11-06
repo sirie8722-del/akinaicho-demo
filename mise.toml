@@ -28,6 +28,10 @@ run = "npm run deploy"
 description = "型チェック（wasm32 ターゲット）"
 run = "cargo check --target wasm32-unknown-unknown"
 
+[tasks.verify]
+description = "無料枠の目安（WASM メモリ・レイテンシ）をローカルで検証する"
+run = "node scripts/verify-free-tier.mjs"
+
 [tasks.fmt]
 description = "コードをフォーマットする"
 run = "cargo fmt"

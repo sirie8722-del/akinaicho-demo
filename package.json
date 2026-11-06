@@ -2,7 +2,7 @@
   "name": "rs-wk",
   "version": "0.1.0",
   "private": true,
-  "description": "Rust + Cloudflare Workers web application",
+  "description": "商い帖 — Rust + Cloudflare Workers の販売管理デモ",
   "scripts": {
     "dev": "wrangler dev",
     "build": "wrangler deploy --dry-run --outdir dist",
