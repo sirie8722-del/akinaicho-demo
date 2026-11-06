@@ -49,6 +49,16 @@ jobs:
       - name: Install worker-build
         run: command -v worker-build >/dev/null || cargo install worker-build --version 0.8.7 --locked
 
+      - name: Validate Cloudflare token format
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          printf 'token_length=%s\n' "${#CF_TOKEN}"
+          if [[ ! "$CF_TOKEN" =~ ^[A-Za-z0-9_-]{40}$ ]]; then
+            echo "::error::CLOUDFLARE_API_TOKEN must be a 40-character Cloudflare API token without spaces or newlines."
+            exit 1
+          fi
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v4
         with:
