@@ -17,10 +17,27 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Verify deployment ref
+        run: |
+          if [ "$GITHUB_REF_TYPE" = "branch" ] && [ "$GITHUB_REF_NAME" != "main" ]; then
+            echo "::error::Deploy is only allowed from main or a tag on main."
+            exit 1
+          fi
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            git fetch --no-tags origin main
+            if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+              echo "::error::The tag must point to a commit on main."
+              exit 1
+            fi
+          fi
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@master
@@ -48,6 +65,15 @@ jobs:
 
       - name: Install worker-build
         run: command -v worker-build >/dev/null || cargo install worker-build --version 0.8.7 --locked
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Clippy
+        run: cargo clippy --target wasm32-unknown-unknown -- -D warnings
+
+      - name: Build Worker
+        run: npm run build
 
       - name: Verify Cloudflare token
         env:

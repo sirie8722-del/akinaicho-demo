@@ -361,20 +361,24 @@ pub fn totals(lines: &[LineItem]) -> (i64, i64, i64) {
 }
 
 pub fn today() -> String {
-    date_days_ago(0)
+    jst_date_from_ms(js_sys::Date::now())
 }
 
 /// 今日から `days` 日前の日付（YYYY-MM-DD）。デモデータの生成用。
 pub fn date_days_ago(days: u32) -> String {
-    let now = js_sys::Date::new_0();
-    let target = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(
-        now.get_time() - f64::from(days) * 86_400_000.0,
-    ));
+    jst_date_from_ms(js_sys::Date::now() - f64::from(days) * 86_400_000.0)
+}
+
+/// UTC ミリ秒を日本時間（UTC+9）の YYYY-MM-DD に変換する。
+/// Workers のタイムゾーンは UTC のため、ローカル日付 getter ではなく UTC getter を使う。
+fn jst_date_from_ms(ms: f64) -> String {
+    const JST_OFFSET_MS: f64 = 9.0 * 60.0 * 60.0 * 1000.0;
+    let target = js_sys::Date::new(&wasm_bindgen::JsValue::from_f64(ms + JST_OFFSET_MS));
     format!(
         "{:04}-{:02}-{:02}",
-        target.get_full_year(),
-        target.get_month() + 1,
-        target.get_date()
+        target.get_utc_full_year(),
+        target.get_utc_month() + 1,
+        target.get_utc_date()
     )
 }
 
@@ -414,14 +418,30 @@ fn is_valid_date(value: &str) -> bool {
     {
         return false;
     }
+    let year: u32 = value[0..4].parse().unwrap_or(0);
     let month: u32 = value[5..7].parse().unwrap_or(0);
     let day: u32 = value[8..10].parse().unwrap_or(0);
-    (1..=12).contains(&month) && (1..=31).contains(&day)
+    let max_day = days_in_month(year, month);
+    (1..=9999).contains(&year) && (1..=12).contains(&month) && (1..=max_day).contains(&day)
+}
+
+fn days_in_month(year: u32, month: u32) -> u32 {
+    match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => 0,
+    }
+}
+
+fn is_leap_year(year: u32) -> bool {
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
 }
 
 pub fn format_yen(value: i64) -> String {
     let negative = value < 0;
-    let digits = value.abs().to_string();
+    let digits = value.unsigned_abs().to_string();
     let mut out = String::with_capacity(digits.len() + digits.len() / 3 + 1);
     for (index, ch) in digits.chars().enumerate() {
         if index > 0 && (digits.len() - index).is_multiple_of(3) {

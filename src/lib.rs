@@ -1,13 +1,17 @@
 use worker::*;
 
 mod api;
+mod guard;
 mod metrics;
 mod models;
 mod print;
 mod reports;
+mod service;
 mod store;
 
 const INDEX_HTML: &str = include_str!("index.html");
+const STYLES_CSS: &str = include_str!("styles.css");
+const APP_JS: &str = include_str!("app.js");
 
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
@@ -16,10 +20,14 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     let method = req.method().to_string();
     let path = req.path();
 
-    let router = Router::new();
-
-    let result = router
+    let router = Router::new()
         .get("/", |_, _| Response::from_html(INDEX_HTML))
+        .get("/styles.css", |_, _| {
+            static_asset(STYLES_CSS, "text/css; charset=utf-8")
+        })
+        .get("/app.js", |_, _| {
+            static_asset(APP_JS, "application/javascript; charset=utf-8")
+        })
         .get("/api/health", |_, _| {
             let mut res = Response::from_json(&serde_json::json!({
                 "status": "ok",
@@ -30,7 +38,7 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             Ok(res)
         })
         // 無料枠の確認用（メモリ・レイテンシ・CPU 制限シグナル）
-        .get("/api/diagnostics", |_, _| diagnostics())
+        .get("/api/diagnostics", |_, ctx| diagnostics(&ctx.env))
         // トップページのダッシュボード集計
         .get("/api/dashboard", api::dashboard)
         // マスタ（得意先・商品・自社情報）
@@ -82,9 +90,17 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
             api::report_purchase_remaining,
         )
         .get("/api/reports/balances", api::report_balances)
-        .get("/reports/summary/print", api::print_summary)
-        .run(req, env)
-        .await;
+        .get("/reports/summary/print", api::print_summary);
+
+    let mutation = matches!(method.as_str(), "POST" | "PUT" | "PATCH" | "DELETE");
+    let result = if mutation && path.starts_with("/api/") {
+        match guard::check_mutation(&req, &env) {
+            Ok(()) => router.run(req, env).await,
+            Err((status, message)) => api::api_error(status, &message),
+        }
+    } else {
+        router.run(req, env).await
+    };
 
     let wall_ms = metrics::now_ms() - started;
     let mem_end = metrics::wasm_memory_bytes();
@@ -97,6 +113,10 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         }
     };
 
+    apply_common_headers(&path, &mut res);
+    if res.status_code() == 429 {
+        let _ = res.headers_mut().set("retry-after", "60");
+    }
     metrics::annotate(&mut res, wall_ms, mem_start, mem_end);
     metrics::log_request(
         &method,
@@ -110,11 +130,49 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
     Ok(res)
 }
 
+/// 静的アセットを適切な Content-Type で返す。
+fn static_asset(body: &'static str, content_type: &str) -> Result<Response> {
+    let mut res = Response::from_body(ResponseBody::Body(body.as_bytes().to_vec()))?;
+    res.headers_mut().set("content-type", content_type)?;
+    res.headers_mut().set("cache-control", "no-cache")?;
+    Ok(res)
+}
+
+/// API / HTML / アセットに共通のキャッシュ・セキュリティヘッダーを付与する。
+fn apply_common_headers(path: &str, res: &mut Response) {
+    let headers = res.headers_mut();
+    let _ = headers.set("x-content-type-options", "nosniff");
+    let _ = headers.set("referrer-policy", "no-referrer");
+    let _ = headers.set("x-frame-options", "DENY");
+
+    if path.starts_with("/api/") || path.ends_with("/print") {
+        let _ = headers.set("cache-control", "no-store");
+        return;
+    }
+
+    if matches!(path, "/" | "/styles.css" | "/app.js") {
+        let _ = headers.set("cache-control", "no-cache");
+        let _ = headers.set(
+            "content-security-policy",
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+        );
+    }
+}
+
 /// 無料枠の上限と、このリクエストで観測した値を返す。
 ///
-/// ここでの wall time / memory はローカルでも取得できる目安であり、
-/// 本番の CPU 時間や isolate 全体のメモリを保証するものではない。
-fn diagnostics() -> Result<Response> {
+/// `DIAGNOSTICS_ENABLED=false` が設定されている場合は 404 を返す。
+/// 本番では secret で無効化し、ローカル / CI では既定で有効にする。
+fn diagnostics(env: &Env) -> Result<Response> {
+    let enabled = env
+        .var("DIAGNOSTICS_ENABLED")
+        .ok()
+        .map(|value| !value.to_string().eq_ignore_ascii_case("false"))
+        .unwrap_or(true);
+    if !enabled {
+        return Response::error("Not Found", 404);
+    }
+
     let started = metrics::now_ms();
     let memory = metrics::wasm_memory_bytes();
     let handler_wall_ms = metrics::round3(metrics::now_ms() - started);

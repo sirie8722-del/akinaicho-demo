@@ -17,6 +17,7 @@ jobs:
   build:
     name: fmt / clippy / build
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -65,3 +66,59 @@ jobs:
           path: dist
           if-no-files-found: error
           retention-days: 7
+
+  integration:
+    name: runtime API test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.97.1
+          targets: wasm32-unknown-unknown
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Cache worker-build
+        uses: actions/cache@v6
+        with:
+          path: ~/.cargo/bin/worker-build
+          key: worker-build-0.8.7
+
+      - name: Install worker-build
+        run: command -v worker-build >/dev/null || cargo install worker-build --version 0.8.7 --locked
+
+      - name: Run runtime API checks
+        run: |
+          set -euo pipefail
+          npx wrangler dev --port 8787 --ip 127.0.0.1 > /tmp/wrangler.log 2>&1 &
+          WRANGLER_PID=$!
+          cleanup() { kill "$WRANGLER_PID" 2>/dev/null || true; }
+          trap cleanup EXIT
+
+          for _ in $(seq 1 90); do
+            if curl -fsS http://127.0.0.1:8787/api/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:8787/api/health >/dev/null
+          BASE_URL=http://127.0.0.1:8787 node scripts/verify-free-tier.mjs
+
+      - name: Show Wrangler log on failure
+        if: failure()
+        run: tail -100 /tmp/wrangler.log || true

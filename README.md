@@ -29,6 +29,7 @@ Cloudflare Workers の無料プランで動作する構成です（WASM モジ�
 - **マスタ**: 得意先 5 件・仕入先 3 件・商品 8 件・自社情報をシードデータとして保持
 - **デモデータ**: 見積 100 件・受注 100 件、売上 70 件、発注 40 件、仕入 20 件、入金 45 件、支払 12 件
 - **UI**: 明細行のドラッグ&ドロップ並べ替え、一覧のソート・検索・絞り込み、モバイル幅までのレスポンシブ表示（明細行はカード型に切替）
+- **公開デモの保護**: 更新系 API の IP レート制限（60 回/分）、コレクションごとの登録上限（500 件）、`DEMO_READ_ONLY` による読み取り専用切替
 - **無料枠の計測**: リクエストごとの wall time / WASM メモリ / CPU 制限シグナル
 
 ### 元 PoC から省いているもの
@@ -231,12 +232,16 @@ mise run verify
 - 売上 / 受注 / 月別 / 受注残 / 発注残 / 売掛・買掛の集計
 - 見積作成 → 更新 → 受注変換 → 帳票出力 → 削除の一連の流れ
 - 見積 CRUD 20 回前後のメモリ増加
+- JST の今日と `meta.today` の一致
+- 存在しない日付（`2026-02-31`）と不正な対象月（`abcd-01`）が 400 で拒否されること
 - 128 MiB 超過時は終了コード `1`
 
 ### リクエストごとのログ
 
+通常の 200 応答はログ量を抑えるため出力せず、エラー（400 以上）または 100ms 以上かかったリクエストだけを出力します。
+
 ```
-[metrics] GET /api/quotes -> 200 | wall=1.000ms | wasm_mem=1.188MiB (start=1.188MiB) | cpu_limit=10ms | near_cpu_limit=false
+[metrics] GET /api/quotes -> 500 | wall=120.000ms | wasm_mem=1.188MiB (start=1.188MiB) | cpu_limit=10ms | near_cpu_limit=false
 ```
 
 | ヘッダ / エンドポイント | 内容 |
@@ -244,7 +249,7 @@ mise run verify
 | `server-timing: app;dur=...` | Worker ハンドラの wall time（ミリ秒） |
 | `x-worker-wall-time-ms` | 同上（数値のみ） |
 | `x-wasm-memory-kib` | WASM リニアメモリ（KiB） |
-| `GET /api/diagnostics` | 上限値、メモリ使用率、CPU 制限シグナル |
+| `GET /api/diagnostics` | 上限値、メモリ使用率、CPU 制限シグナル（本番では `DIAGNOSTICS_ENABLED=false` で 404） |
 
 ### ローカル検証の限界
 
@@ -266,14 +271,21 @@ mise run verify
 ├── scripts/
 │   └── verify-free-tier.mjs  # 無料枠 + 見積/受注フローの検証
 ├── src/
-│   ├── lib.rs             # エントリポイント / ルーティング / 計測
+│   ├── lib.rs             # エントリポイント / ルーティング / 計測 / 共通ヘッダー
 │   ├── api.rs             # JSON API ハンドラ
+│   ├── service.rs         # 見積・受注・売上・発注・締処理の業務ロジック
+│   ├── guard.rs           # 公開デモ向けの読み取り専用 / レート制限
 │   ├── models.rs          # ドメインモデル・金額計算・日付処理
 │   ├── store.rs           # インメモリストアとシードデータ（見積/受注 100 件＋売上・発注・仕入・入出金）
-│   ├── reports.rs         # 受注の集計ロジック（得意先別/商品別/月別）
-│   ├── print.rs           # 見積書 / 注文請書 / 集計表の HTML 帳票
+│   ├── reports.rs         # 集計ロジック（ダッシュボード / 得意先別・商品別・月別）
+│   ├── print.rs           # 見積書 / 注文請書 / 納品書 / 発注書 / 集計表の HTML 帳票
 │   ├── metrics.rs         # wall time / WASM メモリの計測
-│   └── index.html         # 一覧・入力フォーム
+│   ├── index.html         # SPA のシェル
+│   ├── app.js             # 画面描画・ルーティング・API 呼び出し
+│   └── styles.css         # 画面スタイル
+├── docs/
+│   └── code-review.md     # コードレビュー記録
+├── LICENSE                # MIT
 └── .gitignore
 ```
 
@@ -318,14 +330,34 @@ mise run deploy
 >
 > 最新の[料金ページ](https://developers.cloudflare.com/workers/platform/pricing/)と[Limits](https://developers.cloudflare.com/workers/platform/limits/)を確認してください。
 
+## 公開デモの保護
+
+このデモには認証がありません。公開 URL で誰でも操作できるため、次の保護を入れています。
+
+- 更新系 API（POST / PUT / DELETE）は `cf-connecting-ip` ごとに **60 回/分**まで（isolate 単位のベストエフォート）
+- 見積・受注・売上・発注・仕入・入金・支払・締処理はコレクションごとに **500 件**まで
+- 読み取り専用にしたい場合は Cloudflare の secret で切り替え
+
+```bash
+# 更新系をすべて 403 にする
+mise exec -- npx wrangler secret put DEMO_READ_ONLY
+# 値: true
+
+# 本番で /api/diagnostics を 404 にする
+mise exec -- npx wrangler secret put DIAGNOSTICS_ENABLED
+# 値: false
+```
+
+レート制限は isolate ごとのメモリで保持する簡易実装です。本格的な防御には Cloudflare の Rate Limiting ルール、Turnstile、Cloudflare Access などを併用してください。
+
 ## GitHub Actions
 
 `.github/workflows/ci.yml` と `.github/workflows/deploy.yml` を用意しています。
 
 | Workflow | トリガー | 内容 |
 | --- | --- | --- |
-| CI | `main` への push、Pull Request、手動 | `cargo fmt --check`、Clippy、Worker ビルド、`dist/` の artifact 保存 |
-| Deploy | 手動実行、`v*` タグの push | Cloudflare Workers へデプロイし、`/api/health` でスモークテスト |
+| CI | `main` / `develop` への push、Pull Request、手動 | `cargo fmt --check`、Clippy、Worker ビルド、`dist/` artifact、`wrangler dev` を使った runtime API 検証 |
+| Deploy | 手動実行（main）、`v*` タグ（main 上のコミットのみ） | fmt / Clippy / ビルド → Cloudflare Workers へデプロイ → `/api/health` スモークテスト |
 
 ### Deploy workflow に必要な Secrets
 
@@ -351,3 +383,8 @@ Deploy workflow は `production` environment を使うため、GitHub 側で承�
 - `worker-build` は初回ビルド時に `wasm-bindgen` / `wasm-opt` を自動でダウンロードします。
 - 秘密情報は `.dev.vars`（ローカル）と `wrangler secret put`（本番）で管理してください。`.dev.vars` は Git 管理対象外です。
 - `build/` と `dist/` は生成物のため Git 管理対象外です。
+- `src/index.html` / `styles.css` / `app.js` は `include_str!` で Worker に埋め込まれます。
+
+## ライセンス
+
+MIT License（`LICENSE` を参照）。

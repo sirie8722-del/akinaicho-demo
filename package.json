@@ -1,5 +1,5 @@
 {
-  "name": "rs-wk",
+  "name": "akinaicho-demo",
   "version": "0.1.0",
   "private": true,
   "description": "商い帖 — Rust + Cloudflare Workers の販売管理デモ",
@@ -10,5 +10,6 @@
   },
   "devDependencies": {
     "wrangler": "^4.157.0"
-  }
+  },
+  "license": "MIT"
 }

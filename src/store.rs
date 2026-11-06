@@ -2,6 +2,9 @@ use std::cell::RefCell;
 
 use crate::models::*;
 
+/// デモで保持する伝票の上限（コレクションごと）。公開デモのメモリ・CPU 保護用。
+pub const MAX_RECORDS: usize = 500;
+
 pub struct Store {
     pub customers: Vec<Customer>,
     pub suppliers: Vec<Supplier>,

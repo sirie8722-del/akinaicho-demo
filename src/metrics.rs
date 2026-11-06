@@ -54,6 +54,9 @@ pub fn annotate(res: &mut Response, wall_ms: f64, mem_start: usize, mem_end: usi
 }
 
 /// 1 リクエスト分の計測値をログに出す。
+///
+/// 通常リクエストまで毎回出すとログ量が多くなるため、エラーまたは
+/// 100ms 以上かかったリクエストだけを対象にする。
 pub fn log_request(
     method: &str,
     path: &str,
@@ -62,6 +65,9 @@ pub fn log_request(
     mem_start: usize,
     mem_end: usize,
 ) {
+    if status < 400 && wall_ms < 100.0 {
+        return;
+    }
     console_log!(
         "[metrics] {} {} -> {} | wall={:.3}ms | wasm_mem={:.3}MiB (start={:.3}MiB) | cpu_limit={}ms | near_cpu_limit={}",
         method,

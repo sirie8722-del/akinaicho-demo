@@ -103,6 +103,51 @@ async function main() {
   );
   console.log(`マスタ            : 得意先 ${meta.customers.length} 件 / 商品 ${meta.products.length} 件`);
 
+  // --- 入力検証 -------------------------------------------------------------
+  console.log("--- 入力検証");
+  const jstParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+  const jstPart = (type) => jstParts.find((part) => part.type === type)?.value;
+  const jstToday = `${jstPart("year")}-${jstPart("month")}-${jstPart("day")}`;
+  if (meta.today !== jstToday) {
+    throw new Error(`サーバの today が JST と一致しません: ${meta.today} !== ${jstToday}`);
+  }
+  console.log(`JST の今日        : ${meta.today}`);
+
+  const invalidDate = await request("/api/quotes", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      customer_code: meta.customers[0].code,
+      date: "2026-02-31",
+      lines: [
+        {
+          product_code: meta.products[0].code,
+          quantity: 1,
+          unit_price: 100,
+          taxable: true,
+        },
+      ],
+    }),
+  });
+  if (invalidDate.res.status !== 400) {
+    if (invalidDate.body?.id) {
+      await request(`/api/quotes/${invalidDate.body.id}`, { method: "DELETE" });
+    }
+    throw new Error(`存在しない日付が拒否されませんでした: HTTP ${invalidDate.res.status}`);
+  }
+  console.log("不正日付の拒否    : 2026-02-31 -> 400");
+
+  const invalidMonth = await request("/api/closings/preview?kind=customer&month=abcd-01");
+  if (invalidMonth.res.status !== 400) {
+    throw new Error(`不正な対象月が拒否されませんでした: HTTP ${invalidMonth.res.status}`);
+  }
+  console.log("不正な対象月の拒否: abcd-01 -> 400\n");
+
   const quoteList = (await json("/api/quotes")).body;
   const orderList = (await json("/api/orders")).body;
   console.log(`デモデータ        : 見積 ${quoteList.length} 件 / 受注 ${orderList.length} 件\n`);
