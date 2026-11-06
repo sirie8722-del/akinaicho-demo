@@ -315,6 +315,33 @@ mise run deploy
 >
 > 最新の[料金ページ](https://developers.cloudflare.com/workers/platform/pricing/)と[Limits](https://developers.cloudflare.com/workers/platform/limits/)を確認してください。
 
+## GitHub Actions
+
+`.github/workflows/ci.yml` と `.github/workflows/deploy.yml` を用意しています。
+
+| Workflow | トリガー | 内容 |
+| --- | --- | --- |
+| CI | `main` への push、Pull Request、手動 | `cargo fmt --check`、Clippy、Worker ビルド、`dist/` の artifact 保存 |
+| Deploy | 手動実行、`v*` タグの push | Cloudflare Workers へデプロイし、`/api/health` でスモークテスト |
+
+### Deploy workflow に必要な Secrets
+
+GitHub の **Settings → Secrets and variables → Actions** に次の 2 つを登録してください。
+
+| Secret | 内容 |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Workers の編集権限を持つ API トークン（Cloudflare ダッシュボード → My Profile → API Tokens → 「Edit Cloudflare Workers」テンプレート） |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare のアカウント ID（`wrangler whoami` でも確認可能） |
+
+`gh` CLI を使う場合は次のように登録できます。
+
+```bash
+gh secret set CLOUDFLARE_API_TOKEN
+gh secret set CLOUDFLARE_ACCOUNT_ID
+```
+
+Deploy workflow は `production` environment を使うため、GitHub 側で承認ルールを設定すると本番デプロイ前に確認を挟めます。
+
 ## メモ
 
 - ビルドは `worker-build` が行い、`wrangler.toml` の `[build].command` から呼び出されます。
