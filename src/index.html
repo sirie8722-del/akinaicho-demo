@@ -20,12 +20,14 @@
         --muted: #64748b;
       }
       * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
       body {
         margin: 0;
         background: #f1f5f9;
         color: var(--ink);
       }
       button, input, select, textarea { font: inherit; }
+      input, select, textarea { min-width: 0; max-width: 100%; }
       button { cursor: pointer; }
 
       .app-header {
@@ -45,7 +47,8 @@
         letter-spacing: 0.02em;
         white-space: nowrap;
       }
-      nav { display: flex; gap: 0.25rem; flex: 1; overflow-x: auto; }
+      nav { display: flex; gap: 0.25rem; flex: 1; overflow-x: auto; scrollbar-width: none; }
+      nav::-webkit-scrollbar { display: none; }
       nav button {
         display: inline-flex;
         align-items: center;
@@ -147,7 +150,7 @@
         border-radius: 0.45rem;
         background: #fff;
       }
-      .table-wrap { overflow-x: auto; }
+      .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
       table.list {
         width: 100%;
         border-collapse: collapse;
@@ -309,7 +312,15 @@
         vertical-align: middle;
       }
       table.line-editor tr.dragging { opacity: 0.4; }
-      .drag-cell { width: 2rem; text-align: center; }
+      table.line-editor .c-drag { width: 2rem; text-align: center; }
+      table.line-editor .c-product { min-width: 15rem; }
+      table.line-editor .c-qty { width: 5.5rem; }
+      table.line-editor .c-unit { width: 5rem; }
+      table.line-editor .c-price { width: 7.5rem; }
+      table.line-editor .c-amount { width: 7rem; }
+      table.line-editor .c-note { min-width: 8rem; }
+      table.line-editor .c-tax { width: 4.5rem; }
+      table.line-editor .c-remove { width: 2.6rem; }
       .drag-handle {
         display: inline-block;
         padding: 0.3rem;
@@ -515,8 +526,8 @@
         border-radius: 3px 3px 0 0;
         transition: opacity 0.15s;
       }
-      .chart-bar.sales { background: linear-gradient(180deg, #14b8a6, #0f766e); }
-      .chart-bar.purchases { background: linear-gradient(180deg, #cbd5e1, #94a3b8); }
+      .chart-bar.sales { background: #0f766e; }
+      .chart-bar.purchases { background: #94a3b8; }
       .chart-col:hover .chart-bar { opacity: 0.7; }
       .chart-label {
         height: 1.35rem;
@@ -576,8 +587,8 @@
       .rank-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
       .rank-value { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
       .rank-track { height: 0.35rem; margin-top: 0.3rem; border-radius: 999px; background: #f1f5f9; overflow: hidden; }
-      .rank-track span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #2dd4bf, #0f766e); }
-      .rank-list.products .rank-track span { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+      .rank-track span { display: block; height: 100%; border-radius: 999px; background: #0f766e; }
+      .rank-list.products .rank-track span { background: #2563eb; }
       .rank-meta { width: 2.4rem; color: var(--muted); font-size: 0.64rem; text-align: right; font-variant-numeric: tabular-nums; }
 
       .status-blocks { display: grid; gap: 0.9rem; padding: 0.85rem 1rem 1rem; }
@@ -618,15 +629,21 @@
       a.link:hover { text-decoration: underline; }
 
       @media (max-width: 900px) {
+        .app-header { flex-wrap: wrap; gap: 0.5rem 1rem; padding: 0.7rem 1rem; }
+        nav { flex: 0 0 100%; margin: 0 -1rem; padding: 0 1rem; }
         .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        .dash-grid,
-        .dash-grid-3 { grid-template-columns: 1fr; }
+        .dash-grid { grid-template-columns: 1fr; }
+        .dash-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .dash-grid-3 > .card:last-child { grid-column: 1 / -1; }
       }
       @media (max-width: 560px) {
         .kpi-grid { grid-template-columns: 1fr; }
+        .dash-grid-3 { grid-template-columns: 1fr; }
+        .dash-grid-3 > .card:last-child { grid-column: auto; }
         .dash-actions { width: 100%; }
         .dash-actions button { flex: 1; }
         .chart-axis { display: none; }
+        nav { flex-wrap: wrap; overflow-x: visible; }
       }
 
       #toast {
@@ -648,11 +665,103 @@
       }
       #toast.show { opacity: 1; transform: translateY(0); }
       #toast.error { background: #991b1b; }
+      /* responsive */
+      @media (max-width: 720px) {
+        .toolbar input[type="search"] { flex: 1 1 100%; width: 100%; }
+        .toolbar select { flex: 1 1 10rem; }
+        .toolbar .primary { flex: 1 1 100%; }
+        .card-head { flex-wrap: wrap; }
+        .card-head input[type="search"] { width: 100%; }
+        .summary-filter label { flex: 1 1 10rem; }
+        .summary-filter input,
+        .summary-filter select { width: 100%; }
+        .summary-actions { flex: 1 1 100%; margin-left: 0; }
+        .summary-actions button { flex: 1; }
+
+        table.line-editor,
+        table.line-editor tbody,
+        table.line-editor tr,
+        table.line-editor td { display: block; }
+        table.line-editor { min-width: 0; }
+        table.line-editor thead { display: none; }
+        table.line-editor tr {
+          position: relative;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.55rem 0.65rem;
+          margin-bottom: 0.65rem;
+          padding: 0.8rem 0.9rem;
+          border: 1px solid var(--line);
+          border-radius: 0.6rem;
+          background: #fff;
+        }
+        table.line-editor td { min-width: 0; padding: 0; border: 0; }
+        table.line-editor td::before {
+          content: attr(data-label);
+          display: block;
+          margin-bottom: 0.2rem;
+          color: var(--muted);
+          font-size: 0.66rem;
+          font-weight: 700;
+        }
+        table.line-editor .c-drag,
+        table.line-editor .c-remove {
+          position: absolute;
+          top: 0.35rem;
+          right: 0.35rem;
+          width: auto;
+          padding: 0;
+        }
+        table.line-editor .c-remove { top: auto; bottom: 0.35rem; }
+        table.line-editor .c-drag::before,
+        table.line-editor .c-remove::before,
+        table.line-editor .c-tax::before { display: none; }
+        table.line-editor .c-pick { grid-column: 1 / -1; display: flex; align-items: center; gap: 0.45rem; }
+        table.line-editor .c-pick::before { display: inline; margin: 0; }
+        table.line-editor .c-product,
+        table.line-editor .c-note { grid-column: 1 / -1; }
+        table.line-editor .c-product,
+        table.line-editor .c-qty,
+        table.line-editor .c-unit,
+        table.line-editor .c-price,
+        table.line-editor .c-amount,
+        table.line-editor .c-note,
+        table.line-editor .c-tax { width: auto; min-width: 0; }
+        table.line-editor .c-product { padding-right: 2rem; }
+        table.line-editor .c-amount { text-align: left; }
+        table.line-editor .c-tax { display: flex; align-items: flex-end; }
+        table.line-editor input,
+        table.line-editor select { width: 100%; }
+      }
+
       @media (max-width: 640px) {
-        .app-header { flex-wrap: wrap; gap: 0.5rem; }
+        .app-header { flex-wrap: wrap; gap: 0.5rem; padding: 0.6rem 0.75rem; }
+        .brand { font-size: 0.92rem; }
+        nav { flex: 0 0 100%; margin: 0 -0.75rem; padding: 0 0.75rem; }
+        nav button { padding: 0.4rem 0.65rem; font-size: 0.82rem; }
         .metrics { width: 100%; }
+        main { width: calc(100% - 1.25rem); margin-top: 0.85rem; }
         .page-head { align-items: flex-start; flex-direction: column; }
-        form.slip { padding: 0.9rem 0.7rem; }
+        form.slip { padding: 0.9rem 0.75rem; }
+        .form-actions button { flex: 1 1 8rem; }
+        .totals-box { width: 100%; }
+        .chart-body { padding: 0.75rem 0.6rem 0.6rem; }
+        .chart-columns { gap: 2px; }
+        .chart-col:nth-child(even) .chart-label:not(.current) { visibility: hidden; }
+        .chart-label { font-size: 0.55rem; }
+        table.list th, table.list td { padding: 0.55rem 0.6rem; }
+        .subject-cell { max-width: 12rem; }
+        .kpi-value { font-size: 1.3rem; }
+        .alert-list a { padding: 0.65rem 0.85rem; }
+      }
+
+      @media (max-width: 420px) {
+        .summary-filter label { flex: 1 1 100%; }
+        .toolbar select { flex: 1 1 100%; }
+        .dash-actions button { flex: 1 1 calc(50% - 0.25rem); font-size: 0.78rem; }
+        .chart-columns { gap: 1px; }
+        .chart-label { font-size: 0.5rem; }
+        .actions .link { padding: 0.2rem 0.25rem; }
       }
     </style>
   </head>
@@ -670,7 +779,7 @@
         <button type="button" data-nav="closings">締処理</button>
         <button type="button" data-nav="summary">集計</button>
       </nav>
-      <div class="metrics" id="metrics">WASM —</div>
+      <!-- <div class="metrics" id="metrics">WASM —</div> -->
     </header>
 
     <main id="app"></main>
@@ -796,12 +905,13 @@
       }
 
       async function loadMetrics() {
+        const element = document.getElementById("metrics");
+        if (!element) return;
         try {
           const diag = await api("/api/diagnostics");
-          document.getElementById("metrics").textContent =
-            `WASM ${diag.measured.wasm_memory_mib.toFixed(2)} / 128 MiB`;
+          element.textContent = `WASM ${diag.measured.wasm_memory_mib.toFixed(2)} / 128 MiB`;
         } catch {
-          document.getElementById("metrics").textContent = "WASM —";
+          element.textContent = "WASM —";
         }
       }
 
@@ -851,6 +961,9 @@
         } else if (route.type === "quote-form") {
           setActiveNav("quotes");
           renderQuoteForm(route.id);
+        } else if (route.type === "quotes") {
+          setActiveNav("quotes");
+          renderQuoteList();
         } else if (route.type === "sales") {
           setActiveNav("sales");
           renderSalesList();
@@ -1629,14 +1742,14 @@
           .map((line) => {
             const remaining = line.quantity - line.sold_quantity;
             return `<tr data-line-id="${line.id}">
-              <td><input type="checkbox" class="pick" checked /></td>
-              <td>${esc(line.name)}</td>
-              <td class="num">${qty(line.quantity)}</td>
-              <td class="num">${qty(line.sold_quantity)}</td>
-              <td class="num">${qty(remaining)}</td>
-              <td><input class="flow-qty" type="number" min="0" max="${remaining}" step="0.01" value="${remaining}" /></td>
-              <td class="num">¥${yen(line.unit_price)}</td>
-              <td class="num flow-amount">¥${yen(Math.round(remaining * line.unit_price))}</td>
+              <td class="c-pick" data-label="計上"><input type="checkbox" class="pick" checked /></td>
+              <td class="c-product" data-label="商品">${esc(line.name)}</td>
+              <td class="c-stat num" data-label="受注">${qty(line.quantity)}</td>
+              <td class="c-stat num" data-label="売上済">${qty(line.sold_quantity)}</td>
+              <td class="c-stat num" data-label="残">${qty(remaining)}</td>
+              <td class="c-qty" data-label="今回数量"><input class="flow-qty" type="number" min="0" max="${remaining}" step="0.01" value="${remaining}" /></td>
+              <td class="c-price num" data-label="単価">¥${yen(line.unit_price)}</td>
+              <td class="c-amount num flow-amount" data-label="金額">¥${yen(Math.round(remaining * line.unit_price))}</td>
             </tr>`;
           })
           .join("");
@@ -1734,14 +1847,14 @@
             const product = state.meta.products.find((item) => item.code === line.product_code);
             const cost = product?.cost_price ?? line.unit_price;
             return `<tr data-line-id="${line.id}" data-cost="${cost}">
-              <td><input type="checkbox" class="pick" checked /></td>
-              <td>${esc(line.name)}</td>
-              <td class="num">${qty(line.quantity)}</td>
-              <td class="num">${qty(line.purchased_quantity)}</td>
-              <td class="num">${qty(remaining)}</td>
-              <td><input class="flow-qty" type="number" min="0" max="${remaining}" step="0.01" value="${remaining}" /></td>
-              <td class="num">¥${yen(cost)}</td>
-              <td class="num flow-amount">¥${yen(Math.round(remaining * cost))}</td>
+              <td class="c-pick" data-label="計上"><input type="checkbox" class="pick" checked /></td>
+              <td class="c-product" data-label="商品">${esc(line.name)}</td>
+              <td class="c-stat num" data-label="受注">${qty(line.quantity)}</td>
+              <td class="c-stat num" data-label="発注済">${qty(line.purchased_quantity)}</td>
+              <td class="c-stat num" data-label="残">${qty(remaining)}</td>
+              <td class="c-qty" data-label="今回数量"><input class="flow-qty" type="number" min="0" max="${remaining}" step="0.01" value="${remaining}" /></td>
+              <td class="c-price num" data-label="仕入単価">¥${yen(cost)}</td>
+              <td class="c-amount num flow-amount" data-label="金額">¥${yen(Math.round(remaining * cost))}</td>
             </tr>`;
           })
           .join("");
@@ -2150,15 +2263,15 @@
         const code = line?.product_code || product?.code || "";
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="drag-cell"><span class="drag-handle" draggable="true" title="ドラッグで並べ替え">⠿</span></td>
-          <td style="min-width:15rem"><select class="product">${productOptions(code)}</select></td>
-          <td style="width:5.5rem"><input class="qty" type="number" min="0" step="0.01" value="${line ? qty(line.quantity) : 1}" /></td>
-          <td style="width:5rem"><input class="unit" type="text" value="${esc(line?.unit ?? product?.unit ?? "")}" /></td>
-          <td style="width:7.5rem"><input class="price" type="number" min="0" step="1" value="${line ? line.unit_price : product?.unit_price ?? 0}" /></td>
-          <td class="num amount" style="width:7rem">¥0</td>
-          <td style="min-width:8rem"><input class="note" type="text" value="${esc(line?.note ?? "")}" placeholder="任意" /></td>
-          <td style="width:4.5rem"><label class="check"><input type="checkbox" class="taxable" ${line ? (line.taxable ? "checked" : "") : "checked"} />課税</label></td>
-          <td style="width:2.6rem"><button type="button" class="icon remove" title="行を削除">×</button></td>`;
+          <td class="c-drag"><span class="drag-handle" draggable="true" title="ドラッグで並べ替え">⠿</span></td>
+          <td class="c-product" data-label="商品"><select class="product">${productOptions(code)}</select></td>
+          <td class="c-qty" data-label="数量"><input class="qty" type="number" min="0" step="0.01" value="${line ? qty(line.quantity) : 1}" /></td>
+          <td class="c-unit" data-label="単位"><input class="unit" type="text" value="${esc(line?.unit ?? product?.unit ?? "")}" /></td>
+          <td class="c-price" data-label="単価"><input class="price" type="number" min="0" step="1" value="${line ? line.unit_price : product?.unit_price ?? 0}" /></td>
+          <td class="c-amount num amount" data-label="金額">¥0</td>
+          <td class="c-note" data-label="備考"><input class="note" type="text" value="${esc(line?.note ?? "")}" placeholder="任意" /></td>
+          <td class="c-tax" data-label=""><label class="check"><input type="checkbox" class="taxable" ${line ? (line.taxable ? "checked" : "") : "checked"} />課税</label></td>
+          <td class="c-remove"><button type="button" class="icon remove" title="行を削除">×</button></td>`;
 
         tbody.append(tr);
 
