@@ -2,6 +2,10 @@
 
 `anti-ai-slop-ui` のプロセスに沿って、販売管理デモの UI をレビューし、方向性・トークン・レイアウトを再定義した記録です。
 
+参考:
+- [Michelin Design System — Principles of a dashboard](https://designsystem.michelin.com/data-visualization/design-guidelines/principles-of-a-dashboard)
+- Adobe Color パレット `30F08E, F06530, F0305F, 4F705F, 70584F`
+
 ## 1. 分類とプロダクト文脈
 
 - **UI 分類**: 業務アプリ / 管理ダッシュボード / 入力画面
@@ -37,49 +41,67 @@
 
 ## 3. 採用した方向性
 
-**Ink-on-paper operational ledger**（紙とインクの業務帳簿）を、Financial Dashboard / Dense Dashboard の構造に適用する。
+**Michelin operational dashboard × Ledger**（Michelin のデータビズ原則＋帳簿構造）。
 
-- 紙のような暖かいニュートラル背景
-- インク色の本文と、朱色（vermilion）の限定アクセント
+- Michelin の原則に合わせ、**統一したライトグレー背景**と**白いカード**を使う
+- フィルタ領域はカードと異なるグレー面にして、操作とデータを分ける
+- 最重要情報を左上〜上部に置く（KPI ストリップ → 売上推移 → 対応待ち → 台帳）
+- 色は装飾ではなく情報。売上・仕入・入金・督促・危険を意味で割り当てる
 - 角丸をほぼ廃止し、1px の罫線で情報を区切る
 - KPI はカードの集合ではなく、連続した「帳票ストリップ」
-- 一覧は白いカードではなく、台帳のような高密度テーブル
-- 数字は等幅数字、伝票番号はモノスペース
-- 装飾的なグラデーション、グロー、絵文字、ガラス表現は使わない
+- 一覧は台帳のような高密度テーブル。数字は等幅数字、伝票番号はモノスペース
+- グラデーション、グロー、絵文字、ガラス表現は使わない
 - ヘッダーは要望どおりサンセリフの「販売管理システムデモ」を維持
+
+### カラーの意味
+
+| 色 | 用途 |
+| --- | --- |
+| `#4F705F` | 売上、受注済、完了、ポジティブ |
+| `#F06530` | 主要アクション、未処理、商品別ランキング |
+| `#F0305F` | 危険、マイナス、フォーカスリング |
+| `#70584F` | 仕入、提出済、ニュートラル寄りのデータ |
+| `#30F08E` | 当月の売上バー、入金の強調（文字色には使わない） |
+
+> 主要ボタンは `#F06530` のままだと白文字のコントラストが不足するため、同じ色相を暗くした `#B8461C` を面に使い、白文字を載せています。`#F06530` はバー・下線・ステータスの面に残しています。
 
 ## 4. デザイントークン
 
 ```json
 {
   "product": "商い帖 — 販売管理システムデモ",
-  "visualDirection": "Ink-on-paper operational ledger / Financial Dashboard",
+  "visualDirection": "Michelin operational dashboard x Ledger",
+  "paletteSource": "Adobe Color palette 30F08E, F06530, F0305F, 4F705F, 70584F",
   "palette": {
-    "background": "#f1ede4",
-    "surface": "#fbf8f0",
-    "surfaceMuted": "#eae3d5",
-    "textPrimary": "#201e1a",
-    "textSecondary": "#6b6558",
-    "border": "#d7cfbe",
-    "borderStrong": "#b8ad98",
-    "accentPrimary": "#a63a2b",
-    "accentSecondary": "#7e2c21",
-    "accentSoft": "#f2dfd9",
-    "success": "#2f6b4f",
-    "warning": "#8a6118",
-    "danger": "#a63a2b",
-    "info": "#3e5c76"
+    "background": "#f3f3f3",
+    "surface": "#ffffff",
+    "surfaceMuted": "#f7f7f7",
+    "filterPanel": "#e7e7e7",
+    "textPrimary": "#1a1a1a",
+    "textSecondary": "#5f5f5f",
+    "border": "#dddddd",
+    "borderStrong": "#c9c9c9",
+    "accentPrimary": "#f06530",
+    "actionBackground": "#b8461c",
+    "actionBackgroundHover": "#9e3b16",
+    "accentSoft": "#fde7dd",
+    "sales": "#4f705f",
+    "salesCurrent": "#30f08e",
+    "purchases": "#70584f",
+    "danger": "#f0305f",
+    "dangerText": "#b3163f",
+    "successText": "#2f5a46"
   },
   "typography": {
     "uiFont": "Yu Gothic UI / Hiragino Sans / Noto Sans JP / system-ui",
     "monoFont": "Cascadia Code / SFMono-Regular / Consolas",
     "scale": {
-      "xs": "0.6rem",
-      "sm": "0.7rem",
-      "base": "0.78rem",
+      "xs": "0.64rem",
+      "sm": "0.72rem",
+      "base": "0.84rem",
       "lg": "1rem",
-      "xl": "1.28rem",
-      "display": "1.6rem"
+      "xl": "1.4rem",
+      "display": "1.7rem"
     },
     "rules": [
       "数字は tabular-nums",
@@ -149,16 +171,18 @@
 - KPI の漢字チップを削除し、CSS カウンタで 01〜06 を付与。
 - `dash-grid-3` の 3 カードを、1 枚の `.ledger-card` + `.ledger-grid` に変更。
 - 一覧の操作列を `position: sticky` で右固定。
+- 文字サイズを約 10% 引き上げ、KPI・表・フォームの可読性を調整。
+- 主要ボタンはコントラスト確保のため `#B8461C` の面に白文字。`#F06530` はデータ面に残す。
 - 900px 以下では件名列を省略し、操作列の固定も解除して横スクロールを優先（列の重なりを防ぐ）。
 - ステータスは角丸ピルではなく、四角いスタンプ＋小さなドットに変更。
-- グラフはインクと黄土色のフラットバー。グラデーションなし。
+- グラフは売上 `#4F705F`、仕入 `#70584F`、当月の売上だけ `#30F08E` のフラットバー。グラデーションなし。
 - ナビはピルではなく下線タブ。
-- ツールバーは検索を下線フィールド、絞り込みを四角いセレクト、主要操作を朱色のボタンに変更。
+- ツールバーは検索を下線フィールド、絞り込みを四角いセレクト、主要操作を `#F06530` のボタンに変更。
 
 ## 7. スコア（変更後）
 
 - AI Slop Score: **3 / 10**
-  - Palette 0: 紙・インク・朱で一貫。紫/グラデーションなし
+  - Palette 0: Michelin のグレー背景＋白カード＋指定パレットで一貫。紫/グラデーションなし
   - Layout 1: KPI ストリップと台帳パネルで独自性。チャート/一覧は標準構造を残す
   - Component 0: 角丸カード・ピル・影を排除
   - Typography 1: システムサンセリフは意図的。モノスペース数字で識別性を追加
@@ -172,7 +196,7 @@
 
 ## 8. アクセシビリティ確認
 
-- テキストと背景のコントラストを確保（インク `#201e1a` / 紙 `#f1ede4`）。
+- テキストと背景のコントラストを確保（インク `#1a1a1a` / 背景 `#f3f3f3`、カード `#ffffff`）。
 - フォーカスリングを朱色で明示。
 - 状態は色だけでなくラベル（下書き / 提出済 / 受注済 など）でも表示。
 - テーブルはキーボードでスクロール可能。操作列は右固定。

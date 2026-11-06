@@ -5,20 +5,28 @@
    ============================================================ */
 
 :root {
-  --paper: #f1ede4;
-  --surface: #fbf8f0;
-  --surface-2: #eae3d5;
-  --ink: #201e1a;
-  --muted: #6b6558;
-  --line: #d7cfbe;
-  --line-strong: #b8ad98;
-  --accent: #a63a2b;
-  --accent-dark: #7e2c21;
-  --accent-soft: #f2dfd9;
-  --positive: #2f6b4f;
-  --warning: #8a6118;
-  --info: #3e5c76;
-  --danger: #a63a2b;
+  --paper: #f3f3f3;
+  --surface: #ffffff;
+  --surface-2: #f7f7f7;
+  --surface-3: #e7e7e7;
+  --surface-4: #dddddd;
+  --ink: #1a1a1a;
+  --muted: #5f5f5f;
+  --line: #dddddd;
+  --line-strong: #c9c9c9;
+  --accent: #b8461c;
+  --accent-strong: #9e3b16;
+  --accent-dark: #9e3b16;
+  --accent-soft: #fde7dd;
+  --orange: #f06530;
+  --positive: #4f705f;
+  --positive-ink: #2f5a46;
+  --warning: #b04215;
+  --info: #70584f;
+  --danger: #f0305f;
+  --danger-ink: #b3163f;
+  --green-bright: #30f08e;
+  --brown: #70584f;
   --teal: var(--accent);
   --teal-dark: var(--accent-dark);
   --teal-soft: var(--accent-soft);
@@ -50,7 +58,7 @@ body {
   gap: 1.25rem;
   padding: 0.5rem 1.25rem;
   border-bottom: 1px solid var(--line-strong);
-  background: rgb(251 248 240 / 0.97);
+  background: rgb(255 255 255 / 0.97);
   backdrop-filter: none;
 }
 
@@ -84,7 +92,7 @@ nav button:hover {
 }
 
 nav button.active {
-  border-bottom-color: var(--accent);
+  border-bottom-color: var(--orange);
   background: transparent;
   color: var(--ink);
 }
@@ -102,14 +110,14 @@ main {
   padding: 0.52rem 0.82rem;
   border-radius: 2px;
   background: var(--accent);
-  color: #fff;
-  font-size: 0.78rem;
+  color: #ffffff;
+  font-size: 0.84rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
 
 .primary:hover {
-  background: var(--accent-dark);
+  background: var(--accent-strong);
 }
 
 .secondary {
@@ -131,7 +139,7 @@ input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 a:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--danger);
   outline-offset: 2px;
 }
 
@@ -179,7 +187,7 @@ table.list {
 table.list th {
   padding: 0.5rem 0.7rem;
   border-bottom: 1px solid var(--line-strong);
-  background: transparent;
+  background: var(--paper);
   color: var(--muted);
   font-size: 0.64rem;
   font-weight: 800;
@@ -242,7 +250,7 @@ table.list th.sortable.desc::after {
 }
 
 .link.danger {
-  color: var(--danger);
+  color: var(--danger-ink);
 }
 
 /* ------------------------------------------------------------
@@ -277,21 +285,21 @@ table.list th.sortable.desc::after {
 }
 
 .status.sent {
-  border-color: #a9b9c6;
-  background: #edf2f5;
-  color: var(--info);
+  border-color: var(--brown);
+  background: #f2efed;
+  color: var(--brown);
 }
 
 .status.accepted,
 .status.completed {
-  border-color: #a8c3b4;
-  background: #edf5f0;
-  color: var(--positive);
+  border-color: var(--positive);
+  background: #edf4f0;
+  color: var(--positive-ink);
 }
 
 .status.open {
-  border-color: #cbb98f;
-  background: #f7f1e2;
+  border-color: var(--orange, var(--accent));
+  background: var(--accent-soft);
   color: var(--warning);
 }
 
@@ -302,7 +310,7 @@ table.list th.sortable.desc::after {
 .toolbar {
   padding: 0.62rem 0.85rem;
   border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--surface-3);
 }
 
 .toolbar input[type="search"],
@@ -336,7 +344,7 @@ table.list th.sortable.desc::after {
 .summary-filter {
   padding: 0.7rem 0.85rem;
   border-bottom: 1px solid var(--line);
-  background: var(--surface);
+  background: var(--surface-3);
 }
 
 .summary-filter label {
@@ -377,7 +385,7 @@ table.list th.sortable.desc::after {
   width: 2px;
   height: 1rem;
   border-radius: 0;
-  background: var(--accent);
+  background: var(--orange);
   box-shadow: none;
 }
 
@@ -472,11 +480,13 @@ table.list th.sortable.desc::after {
 }
 
 .delta.up {
-  color: var(--positive);
+  color: var(--positive-ink);
+  box-shadow: inset 0 -2px 0 var(--green-bright);
 }
 
 .delta.down {
-  color: var(--accent);
+  color: var(--danger-ink);
+  box-shadow: inset 0 -2px 0 var(--danger);
 }
 
 /* chart */
@@ -496,11 +506,15 @@ table.list th.sortable.desc::after {
 }
 
 .chart-bar.sales {
-  background: var(--ink);
+  background: var(--positive);
 }
 
 .chart-bar.purchases {
-  background: #a2875b;
+  background: var(--brown);
+}
+
+.chart-col:last-child .chart-bar.sales {
+  background: var(--green-bright);
 }
 
 .chart-col:hover .chart-bar {
@@ -514,7 +528,8 @@ table.list th.sortable.desc::after {
 }
 
 .chart-label.current {
-  color: var(--accent);
+  color: var(--ink);
+  border-bottom: 2px solid var(--green-bright);
   font-weight: 700;
 }
 
@@ -528,11 +543,11 @@ table.list th.sortable.desc::after {
 }
 
 .legend i.sales {
-  background: var(--ink);
+  background: var(--positive);
 }
 
 .legend i.purchases {
-  background: #a2875b;
+  background: var(--brown);
 }
 
 /* attention queue */
@@ -551,15 +566,15 @@ table.list th.sortable.desc::after {
   padding: 0 0.3rem;
   border-radius: 2px;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--warning);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .alert-list li.ok .alert-count {
-  background: #e8f0ea;
-  color: var(--positive);
+  background: #e6f7ee;
+  color: var(--positive-ink);
 }
 
 .alert-text {
@@ -642,11 +657,11 @@ table.list th.sortable.desc::after {
 
 .rank-track span {
   border-radius: 0;
-  background: var(--ink);
+  background: var(--positive);
 }
 
 .rank-list.products .rank-track span {
-  background: var(--accent);
+  background: var(--orange);
 }
 
 .rank-meta {
@@ -677,7 +692,7 @@ table.list th.sortable.desc::after {
 }
 
 .seg.sent {
-  background: var(--info);
+  background: var(--brown);
 }
 
 .seg.accepted,
@@ -686,7 +701,7 @@ table.list th.sortable.desc::after {
 }
 
 .seg.open {
-  background: var(--warning);
+  background: var(--orange);
 }
 
 .seg-legend {
@@ -712,23 +727,23 @@ table.list th.sortable.desc::after {
 }
 
 .activity-kind.sale {
-  background: transparent;
-  color: var(--ink);
+  background: #edf4f0;
+  color: var(--positive-ink);
 }
 
 .activity-kind.receipt {
-  background: #edf2f5;
-  color: var(--info);
+  background: var(--green-bright);
+  color: var(--ink);
 }
 
 .activity-kind.purchase_order {
-  background: #f7f1e2;
+  background: var(--accent-soft);
   color: var(--warning);
 }
 
 .activity-kind.purchase {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: #f2efed;
+  color: var(--brown);
 }
 
 /* ------------------------------------------------------------
@@ -822,7 +837,7 @@ table.line-editor select:focus {
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--line);
   border-radius: 0;
-  background: var(--surface-2);
+  background: var(--paper);
   font-size: 0.8rem;
 }
 
@@ -1050,7 +1065,7 @@ table.list tbody tr:hover td.actions {
     width: 100%;
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .subject-cell,
   .subject-col {
     display: none;
@@ -1074,5 +1089,223 @@ table.list tbody tr:hover td.actions {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+/* ------------------------------------------------------------
+   Readability pass: slightly larger type scale
+   ------------------------------------------------------------ */
+
+body {
+  font-size: 1rem;
+}
+
+.brand {
+  font-size: 0.9rem;
+}
+
+nav button {
+  font-size: 0.86rem;
+}
+
+.dash-date {
+  font-size: 0.78rem;
+}
+
+.dash-actions .primary,
+.dash-actions .secondary,
+.primary,
+.secondary {
+  font-size: 0.84rem;
+}
+
+.card-head {
+  font-size: 0.82rem;
+}
+
+.card-sub {
+  font-size: 0.68rem;
+}
+
+table.list {
+  font-size: 0.86rem;
+}
+
+table.list th {
+  font-size: 0.72rem;
+}
+
+table.list td {
+  padding: 0.58rem 0.75rem;
+}
+
+.mono {
+  font-size: 0.8rem;
+}
+
+.subject-cell {
+  max-width: 20rem;
+}
+
+.link {
+  font-size: 0.8rem;
+}
+
+.status {
+  font-size: 0.7rem;
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+}
+
+.kpi-label::before {
+  font-size: 0.64rem;
+}
+
+.kpi-value {
+  font-size: 1.4rem;
+}
+
+.kpi-foot {
+  font-size: 0.7rem;
+}
+
+.delta {
+  font-size: 0.68rem;
+}
+
+.chart-axis {
+  font-size: 0.62rem;
+}
+
+.chart-label {
+  font-size: 0.62rem;
+}
+
+.legend {
+  font-size: 0.7rem;
+}
+
+.alert-count {
+  font-size: 0.84rem;
+}
+
+.alert-text {
+  font-size: 0.84rem;
+}
+
+.alert-sub {
+  font-size: 0.7rem;
+}
+
+.rank-no {
+  font-size: 0.66rem;
+}
+
+.rank-top {
+  font-size: 0.8rem;
+}
+
+.rank-value {
+  font-size: 0.78rem;
+}
+
+.rank-meta {
+  font-size: 0.66rem;
+}
+
+.status-block-title {
+  font-size: 0.76rem;
+}
+
+.seg-legend {
+  font-size: 0.68rem;
+}
+
+.activity-kind {
+  font-size: 0.64rem;
+}
+
+.toolbar input[type="search"],
+.card-head input[type="search"] {
+  font-size: 0.82rem;
+}
+
+.toolbar select,
+.summary-filter input,
+.summary-filter select {
+  font-size: 0.8rem;
+}
+
+.summary-filter label {
+  font-size: 0.72rem;
+}
+
+.summary-meta {
+  font-size: 0.78rem;
+}
+
+label.field {
+  font-size: 0.74rem;
+}
+
+label.field input,
+label.field select,
+label.field textarea {
+  font-size: 0.84rem;
+}
+
+.section-title {
+  font-size: 0.82rem;
+}
+
+table.line-editor {
+  font-size: 0.84rem;
+}
+
+table.line-editor th {
+  font-size: 0.68rem;
+}
+
+table.line-editor input,
+table.line-editor select {
+  font-size: 0.84rem;
+}
+
+.totals-box {
+  font-size: 0.86rem;
+}
+
+.totals-box .grand {
+  font-size: 1.04rem;
+}
+
+.notice {
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .kpi-value {
+    font-size: 1.28rem;
+  }
+
+  .kpi-label {
+    font-size: 0.7rem;
+  }
+
+  .kpi-foot {
+    font-size: 0.67rem;
+  }
+
+  table.list {
+    font-size: 0.82rem;
+  }
+
+  table.list th {
+    font-size: 0.68rem;
+  }
+
+  .link {
+    font-size: 0.76rem;
   }
 }

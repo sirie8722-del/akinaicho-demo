@@ -282,11 +282,11 @@ const app = document.getElementById("app");
       }
 
       const STATUS_COLORS = {
-        draft: "#b8ad98",
-        sent: "#3e5c76",
-        accepted: "#2f6b4f",
-        open: "#8a6118",
-        completed: "#2f6b4f",
+        draft: "#c9c9c9",
+        sent: "#70584f",
+        accepted: "#4f705f",
+        open: "#f06530",
+        completed: "#4f705f",
       };
 
       function kpiCard(label, value, foot) {
