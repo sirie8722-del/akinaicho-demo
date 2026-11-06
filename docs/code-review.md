@@ -32,7 +32,7 @@
 | M-9 | Medium | 整合性 | `src/index.html`, `src/api.rs` | 受注を手動で「完了」にでき、受注残 KPI と矛盾する | 未対応 |
 | M-10 | Medium | 入力検証 | `src/api.rs`, `src/store.rs` | 文字列長・入金方法・明細数の上限が不十分 | 未対応 |
 | M-11 | Medium | 設計 | `src/store.rs` | インメモリ + isolate ごとの保持で、データがリセット・分岐する | 既知の制約 |
-| M-12 | Medium | 保守性 | `src/index.html`, `src/api.rs` | 2,659 行の単一 HTML と 1,286 行の API モジュール | 未対応 |
+| M-12 | Medium | 保守性 | `src/index.html`, `src/api.rs` | 2,660 行の単一 HTML と 1,286 行の API モジュール | 未対応 |
 | M-13 | Medium | サプライチェーン | `.github/workflows/*` | Actions がタグ参照で、`dtolnay/rust-toolchain@master` は可変 | 未対応 |
 | M-14 | Medium | 依存関係 | CI | `cargo audit` / `npm audit` が未実行 | 未対応 |
 | L-1 | Low | ドキュメント | `README.md` | ローカルの絶対パス（ユーザー名を含む）が記載されていた | **対応済み** |
@@ -181,7 +181,7 @@ HTML5 Drag and Drop はタッチ端末では動作せず、キーボード操作
 
 ### M-12 単一ファイルの肥大化
 
-- `src/index.html`: 約 2,659 行（CSS / HTML / JS / ルーティング / 画面描画）
+- `src/index.html`: 約 2,660 行（CSS / HTML / JS / ルーティング / 画面描画）
 - `src/api.rs`: 約 1,286 行（全ドメインのハンドラと業務ロジック）
 
 - 推奨: フロントは `app.js` / `styles.css` / 画面モジュールに分割する。API は quotes / orders / billing / reports などに分割する。
