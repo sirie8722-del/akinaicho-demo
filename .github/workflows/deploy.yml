@@ -49,22 +49,30 @@ jobs:
       - name: Install worker-build
         run: command -v worker-build >/dev/null || cargo install worker-build --version 0.8.7 --locked
 
-      - name: Validate Cloudflare token format
+      - name: Verify Cloudflare token
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          printf 'token_length=%s\n' "${#CF_TOKEN}"
-          if [[ ! "$CF_TOKEN" =~ ^[A-Za-z0-9_-]{40}$ ]]; then
-            echo "::error::CLOUDFLARE_API_TOKEN must be a 40-character Cloudflare API token without spaces or newlines."
-            exit 1
-          fi
+          TOKEN="$(printf '%s' "$CF_TOKEN" | tr -d '[:space:]')"
+          ACCOUNT="$(printf '%s' "$CF_ACCOUNT_ID" | tr -d '[:space:]')"
+          echo "::add-mask::$TOKEN"
+          printf 'token_raw_length=%s token_trimmed_length=%s account_length=%s\n' \
+            "${#CF_TOKEN}" "${#TOKEN}" "${#ACCOUNT}"
+          RESPONSE="$(curl --silent --show-error \
+            -H "Authorization: Bearer $TOKEN" \
+            https://api.cloudflare.com/client/v4/user/tokens/verify)"
+          echo "$RESPONSE" | jq -c '{success, errors, status: .result.status}'
+          echo "$RESPONSE" | jq -e '.success == true' >/dev/null
 
       - name: Deploy
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$CF_TOKEN" | tr -d '[:space:]')"
+          export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$CF_ACCOUNT_ID" | tr -d '[:space:]')"
+          npx wrangler deploy
 
       - name: Smoke test
         run: |
