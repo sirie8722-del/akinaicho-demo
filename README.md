@@ -6,6 +6,10 @@
 
 Cloudflare Workers の無料プランで動作する構成です（WASM モジュール）。
 
+デモ公開 URL: **https://akinaicho-demo.s-irie8722.workers.dev**
+
+> インメモリストアのため、表示中のデータは Worker の isolate が入れ替わると初期デモデータに戻ります。デモ操作中の変更が全員に永続的に共有されるものではありません。
+
 ## 実装範囲
 
 - **ダッシュボード**: トップページに KPI（当月売上・入金・売掛残高・受注残高・当月仕入・買掛残高）、売上/仕入の 12 か月推移、得意先別/商品別 TOP5、対応待ち、伝票ステータス、最近の動きを表示
@@ -288,14 +292,20 @@ mise run verify
 
 簡略化のため、伝票番号は `Q-0001` / `O-0001` / `S-0001` などの連番、税区分は「伝票毎・消費税 10%・四捨五入」に固定しています。締処理は月単位の累計残高で計算し、締処理後の当月データ変更までは考慮しません。
 
-## デプロイ（任意）
+## デプロイ
 
 ```bash
-mise exec -- npx wrangler login
+mise exec -- npx wrangler login   # 初回のみ（ブラウザで OAuth 認証）
 mise run deploy
 ```
 
-`wrangler.toml` の `name` が Worker 名です。永続化を入れる場合は D1 の作成とバインディング追加が必要です。
+`wrangler.toml` の `name = "akinaicho-demo"` が Worker 名です。デプロイ後の URL は `https://<Worker 名>.<アカウントのサブドメイン>.workers.dev` になります。
+
+- 本番 URL: https://akinaicho-demo.s-irie8722.workers.dev
+- アカウントの確認: `mise exec -- npx wrangler whoami`
+- ログの確認: Cloudflare ダッシュボード → Workers & Pages → `akinaicho-demo` → Logs（`[observability]` 有効化済み）
+
+永続化を入れる場合は D1 の作成とバインディング追加が必要です。現在は `thread_local!` のインメモリ実装のため、isolate の入れ替わりでデータがリセットされます。
 
 > **無料プランについて**
 > - リクエスト数: 1 日 100,000 件まで
