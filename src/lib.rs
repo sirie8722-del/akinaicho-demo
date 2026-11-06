@@ -11,6 +11,7 @@ mod store;
 
 const INDEX_HTML: &str = include_str!("index.html");
 const STYLES_CSS: &str = include_str!("styles.css");
+const LEDGER_CSS: &str = include_str!("ledger.css");
 const APP_JS: &str = include_str!("app.js");
 
 #[event(fetch)]
@@ -24,6 +25,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get("/", |_, _| Response::from_html(INDEX_HTML))
         .get("/styles.css", |_, _| {
             static_asset(STYLES_CSS, "text/css; charset=utf-8")
+        })
+        .get("/ledger.css", |_, _| {
+            static_asset(LEDGER_CSS, "text/css; charset=utf-8")
         })
         .get("/app.js", |_, _| {
             static_asset(APP_JS, "application/javascript; charset=utf-8")
@@ -143,18 +147,18 @@ fn apply_common_headers(path: &str, res: &mut Response) {
     let headers = res.headers_mut();
     let _ = headers.set("x-content-type-options", "nosniff");
     let _ = headers.set("referrer-policy", "no-referrer");
-    let _ = headers.set("x-frame-options", "DENY");
+    let _ = headers.set("x-frame-options", "SAMEORIGIN");
 
     if path.starts_with("/api/") || path.ends_with("/print") {
         let _ = headers.set("cache-control", "no-store");
         return;
     }
 
-    if matches!(path, "/" | "/styles.css" | "/app.js") {
+    if matches!(path, "/" | "/styles.css" | "/ledger.css" | "/app.js") {
         let _ = headers.set("cache-control", "no-cache");
         let _ = headers.set(
             "content-security-policy",
-            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'",
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'self'",
         );
     }
 }

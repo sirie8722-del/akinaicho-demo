@@ -282,16 +282,16 @@ const app = document.getElementById("app");
       }
 
       const STATUS_COLORS = {
-        draft: "#cbd5e1",
-        sent: "#38bdf8",
-        accepted: "#10b981",
-        open: "#f59e0b",
-        completed: "#10b981",
+        draft: "#b8ad98",
+        sent: "#3e5c76",
+        accepted: "#2f6b4f",
+        open: "#8a6118",
+        completed: "#2f6b4f",
       };
 
-      function kpiCard(tone, label, chip, value, foot) {
-        return `<article class="kpi ${tone}">
-          <div class="kpi-head"><span class="kpi-label">${esc(label)}</span><span class="kpi-chip">${esc(chip)}</span></div>
+      function kpiCard(label, value, foot) {
+        return `<article class="kpi">
+          <div class="kpi-head"><span class="kpi-label">${esc(label)}</span></div>
           <div class="kpi-value">${value}</div>
           <div class="kpi-foot">${foot}</div>
         </article>`;
@@ -303,7 +303,7 @@ const app = document.getElementById("app");
         return `<div class="rank-list ${tone}">${rows
           .map(
             (row, index) => `<div class="rank-row">
-              <span class="rank-no">${index + 1}</span>
+              <span class="rank-no">${String(index + 1).padStart(2, "0")}</span>
               <div class="rank-main">
                 <div class="rank-top">
                   <span class="rank-name" title="${esc(row.name)}">${esc(row.name)}</span>
@@ -333,44 +333,32 @@ const app = document.getElementById("app");
 
         const kpis = [
           kpiCard(
-            "teal",
             "当月売上",
-            "売",
             `¥${yen(k.sales_month)}`,
             `${deltaHtml}<span class="kpi-muted">／ 前月同期 ¥${yen(k.sales_prev)}</span>`
           ),
           kpiCard(
-            "blue",
             "当月入金",
-            "入",
             `¥${yen(k.receipts_month)}`,
             `<span class="kpi-muted">${k.receipt_count} 件の入金</span>`
           ),
           kpiCard(
-            "amber",
             "売掛残高",
-            "掛",
             `¥${yen(k.receivable)}`,
             `<span class="kpi-muted">得意先 ${state.meta.customers.length} 社</span>`
           ),
           kpiCard(
-            "violet",
             "受注残高",
-            "残",
             `¥${yen(k.order_remaining)}`,
             `<span class="kpi-muted">${k.order_remaining_count} 件の受注</span>`
           ),
           kpiCard(
-            "cyan",
             "当月仕入",
-            "仕",
             `¥${yen(k.purchases_month)}`,
             `<span class="kpi-muted">${k.purchase_count} 件の仕入</span>`
           ),
           kpiCard(
-            "rose",
             "買掛残高",
-            "払",
             `¥${yen(k.payable)}`,
             `<span class="kpi-muted">仕入先 ${state.meta.suppliers.length} 社</span>`
           ),
@@ -520,21 +508,23 @@ const app = document.getElementById("app");
             </div>
           </div>
 
-          <div class="dash-grid-3">
-            <div class="card">
-              <div class="card-head"><span>得意先別売上</span><span class="card-sub">TOP 5</span></div>
-              ${rankList(data.top_customers, "customers", "売上データがありません。")}
-            </div>
-            <div class="card">
-              <div class="card-head"><span>商品別売上</span><span class="card-sub">TOP 5</span></div>
-              ${rankList(data.top_products, "products", "売上データがありません。")}
-            </div>
-            <div class="card">
-              <div class="card-head"><span>伝票ステータス</span></div>
-              <div class="status-blocks">
-                ${statusBlock("見積", data.quote_status)}
-                ${statusBlock("受注", data.order_status)}
-              </div>
+          <div class="card ledger-card">
+            <div class="ledger-grid">
+              <section class="ledger-col">
+                <div class="card-head"><span>得意先別売上</span><span class="card-sub">TOP 5</span></div>
+                ${rankList(data.top_customers, "customers", "売上データがありません。")}
+              </section>
+              <section class="ledger-col">
+                <div class="card-head"><span>商品別売上</span><span class="card-sub">TOP 5</span></div>
+                ${rankList(data.top_products, "products", "売上データがありません。")}
+              </section>
+              <section class="ledger-col">
+                <div class="card-head"><span>伝票ステータス</span></div>
+                <div class="status-blocks">
+                  ${statusBlock("見積", data.quote_status)}
+                  ${statusBlock("受注", data.order_status)}
+                </div>
+              </section>
             </div>
           </div>
 
@@ -595,7 +585,7 @@ const app = document.getElementById("app");
             <div class="table-wrap">
               <table class="list" id="quote-table">
                 <thead>
-                  <tr><th>番号</th><th>日付</th><th>得意先</th><th>件名</th><th class="num">金額</th><th>状態</th><th data-nosort></th></tr>
+                  <tr><th>番号</th><th>日付</th><th>得意先</th><th class="subject-col">件名</th><th class="num">金額</th><th>状態</th><th data-nosort></th></tr>
                 </thead>
                 <tbody>${rows || `<tr><td colspan="7" class="empty">見積がありません。「新規見積」から作成してください。</td></tr>`}</tbody>
               </table>
@@ -659,7 +649,7 @@ const app = document.getElementById("app");
             <div class="table-wrap">
               <table class="list" id="order-table">
                 <thead>
-                  <tr><th>番号</th><th>日付</th><th>得意先</th><th>注文番号</th><th>件名</th><th class="num">金額</th><th>状態</th><th data-nosort></th></tr>
+                  <tr><th>番号</th><th>日付</th><th>得意先</th><th>注文番号</th><th class="subject-col">件名</th><th class="num">金額</th><th>状態</th><th data-nosort></th></tr>
                 </thead>
                 <tbody>${rows || `<tr><td colspan="8" class="empty">受注がありません。「新規受注」から作成してください。</td></tr>`}</tbody>
               </table>
@@ -713,7 +703,7 @@ const app = document.getElementById("app");
               </select>
             </div>
             <div class="table-wrap"><table class="list" id="sale-table">
-              <thead><tr><th>番号</th><th>日付</th><th>得意先</th><th>受注番号</th><th>件名</th><th class="num">金額</th><th data-nosort></th></tr></thead>
+              <thead><tr><th>番号</th><th>日付</th><th>得意先</th><th>受注番号</th><th class="subject-col">件名</th><th class="num">金額</th><th data-nosort></th></tr></thead>
               <tbody>${rows || `<tr><td colspan="7" class="empty">売上がありません。</td></tr>`}</tbody>
             </table></div>
           </div>
