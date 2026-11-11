@@ -110,55 +110,19 @@
     return `${labels[key] || "画面"}の操作について`;
   }
 
-  // ---- rrweb の遅延読み込み -------------------------------------------------
+  // ---- rrweb ---------------------------------------------------------------
+  //
+  // rrweb 本体は /recorder.js に同梱している（別 URL のスクリプト読み込みを
+  // ブロックする拡張機能やキャッシュの影響を避けるため）。ここでは同梱コードが
+  // 初期化されているかだけを確認する。
 
-  const RRWEB_VERSION = "2.2.2";
-
-  function loadScript(src) {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = src;
-      script.async = true;
-      script.dataset.recorderRrweb = "1";
-      script.onload = () => {
-        if (window.rrweb && typeof window.rrweb.record === "function") {
-          resolve(window.rrweb);
-          return;
-        }
-        script.remove();
-        reject(new Error("rrweb の初期化に失敗しました。"));
-      };
-      script.onerror = () => {
-        script.remove();
-        reject(new Error("rrweb を読み込めませんでした。"));
-      };
-      document.head.appendChild(script);
-    });
-  }
-
-  async function loadRrweb() {
+  function loadRrweb() {
     if (window.rrweb && typeof window.rrweb.record === "function") {
-      return window.rrweb;
+      return Promise.resolve(window.rrweb);
     }
-
-    // デプロイ直後の古い 404 キャッシュを避けるため、バージョン付き URL で読む。
-    // 失敗した場合はキャッシュバスターを変えて一度だけ再試行する。
-    const existing = document.querySelector("script[data-recorder-rrweb]");
-    if (existing) existing.remove();
-    const urls = [
-      `/rrweb.js?v=${RRWEB_VERSION}`,
-      `/rrweb.js?v=${RRWEB_VERSION}&retry=${Date.now()}`,
-    ];
-    let lastError = null;
-    for (const url of urls) {
-      try {
-        return await loadScript(url);
-      } catch (error) {
-        lastError = error;
-        await new Promise((resolve) => setTimeout(resolve, 600));
-      }
-    }
-    throw lastError || new Error("rrweb を読み込めませんでした。");
+    return Promise.reject(
+      new Error("操作記録ライブラリを初期化できませんでした。ページを再読み込みしてください。"),
+    );
   }
 
   // ---- ウィジェット ---------------------------------------------------------

@@ -40,8 +40,13 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get("/app.js", |_, _| {
             static_asset(APP_JS, "application/javascript; charset=utf-8")
         })
+        // rrweb 本体を recorder.js に同梱する。別 URL のスクリプト読み込みを
+        // ブロックするブラウザ拡張やキャッシュの影響を受けないようにするため。
         .get("/recorder.js", |_, _| {
-            static_asset(RECORDER_JS, "application/javascript; charset=utf-8")
+            combined_asset(
+                &[RRWEB_JS, RECORDER_JS],
+                "application/javascript; charset=utf-8",
+            )
         })
         .get("/rrweb.js", |_, _| {
             static_asset(RRWEB_JS, "application/javascript; charset=utf-8")
@@ -52,8 +57,16 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get("/rrweb-player.css", |_, _| {
             static_asset(RRWEB_PLAYER_CSS, "text/css; charset=utf-8")
         })
+        // 再生ページもプレイヤーを replay.js に同梱する。
         .get("/replay.js", |_, _| {
-            static_asset(REPLAY_JS, "application/javascript; charset=utf-8")
+            combined_asset(
+                &[RRWEB_PLAYER_JS, REPLAY_JS],
+                "application/javascript; charset=utf-8",
+            )
+        })
+        // 拡張機能の URL フィルタを避けるための別名。
+        .get("/player.css", |_, _| {
+            static_asset(RRWEB_PLAYER_CSS, "text/css; charset=utf-8")
         })
         .get("/replay.css", |_, _| {
             static_asset(REPLAY_CSS, "text/css; charset=utf-8")
@@ -178,6 +191,25 @@ fn static_asset(body: &'static str, content_type: &str) -> Result<Response> {
     Ok(res)
 }
 
+/// 複数のスクリプトを 1 レスポンスに連結して返す。
+/// rrweb を別 URL で読み込まずに済ませるための同梱用。
+fn combined_asset(parts: &[&'static str], content_type: &str) -> Result<Response> {
+    let mut body = Vec::new();
+    for (index, part) in parts.iter().enumerate() {
+        // UMD の末尾が `}))` で終わるため、次の IIFE と連結されないよう
+        // 区切りにセミコロンを入れる。
+        if index > 0 {
+            body.extend_from_slice(b"\n;\n");
+        }
+        body.extend_from_slice(part.as_bytes());
+        body.push(b'\n');
+    }
+    let mut res = Response::from_body(ResponseBody::Body(body))?;
+    res.headers_mut().set("content-type", content_type)?;
+    res.headers_mut().set("cache-control", "no-cache")?;
+    Ok(res)
+}
+
 /// API / HTML / アセットに共通のキャッシュ・セキュリティヘッダーを付与する。
 fn apply_common_headers(path: &str, res: &mut Response) {
     let headers = res.headers_mut();
@@ -209,6 +241,7 @@ fn apply_common_headers(path: &str, res: &mut Response) {
             | "/rrweb.js"
             | "/rrweb-player.js"
             | "/rrweb-player.css"
+            | "/player.css"
             | "/replay.js"
             | "/replay.css"
     ) {
@@ -220,7 +253,10 @@ fn apply_common_headers(path: &str, res: &mut Response) {
     }
 
     // rrweb の配布ファイルはデプロイ直後の 404 をキャッシュしないよう no-store にする。
-    if matches!(path, "/rrweb.js" | "/rrweb-player.js" | "/rrweb-player.css") {
+    if matches!(
+        path,
+        "/rrweb.js" | "/rrweb-player.js" | "/rrweb-player.css" | "/player.css"
+    ) {
         let _ = headers.set("cache-control", "no-store");
     }
 }
