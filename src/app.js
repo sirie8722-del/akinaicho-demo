@@ -131,6 +131,7 @@ const app = document.getElementById("app");
         const parts = location.hash.replace(/^#/, "").split("/").filter(Boolean);
         if (!parts.length || parts[0] === "dashboard") return { type: "dashboard" };
         if (parts[0] === "summary") return { type: "summary" };
+        if (parts[0] === "recordings") return { type: "recordings" };
         if (parts[0] === "payments") return { type: "payments" };
         if (parts[0] === "closings") return { type: "closings" };
         if (parts[0] === "sales") return { type: "sales" };
@@ -194,6 +195,13 @@ const app = document.getElementById("app");
         } else if (route.type === "summary") {
           setActiveNav("summary");
           renderSummary();
+        } else if (route.type === "recordings") {
+          setActiveNav("recordings");
+          if (window.RecorderView) {
+            window.RecorderView.render();
+          } else {
+            app.innerHTML = `<div class="card not-found">操作記録を読み込めませんでした。</div>`;
+          }
         } else {
           setActiveNav("dashboard");
           renderDashboard();

@@ -5,6 +5,15 @@ use crate::models::*;
 /// デモで保持する伝票の上限（コレクションごと）。公開デモのメモリ・CPU 保護用。
 pub const MAX_RECORDS: usize = 500;
 
+/// 操作記録の保持数とサイズ上限。rrweb のイベントは大きくなりやすいため、
+/// 公開デモの isolate メモリを守る目的で厳しめに制限する。
+pub const MAX_RECORDINGS: usize = 10;
+pub const MAX_EVENTS_PER_RECORDING: usize = 5_000;
+/// 100 行の一覧画面だけで 1 イベントが 400KB 程度になるため、1 記録あたり 3MB まで許容する。
+pub const MAX_EVENT_BYTES_PER_RECORDING: usize = 3_000_000;
+pub const MAX_EVENTS_PER_BATCH: usize = 100;
+pub const MAX_EVENT_BYTES_PER_BATCH: usize = 2_000_000;
+
 pub struct Store {
     pub customers: Vec<Customer>,
     pub suppliers: Vec<Supplier>,
@@ -18,6 +27,7 @@ pub struct Store {
     pub receipts: Vec<Receipt>,
     pub supplier_payments: Vec<SupplierPayment>,
     pub closings: Vec<ClosingRecord>,
+    pub recordings: Vec<Recording>,
     pub next_quote_id: u64,
     pub next_order_id: u64,
     pub next_line_id: u64,
@@ -27,6 +37,7 @@ pub struct Store {
     pub next_receipt_id: u64,
     pub next_supplier_payment_id: u64,
     pub next_closing_id: u64,
+    pub next_recording_id: u64,
 }
 
 thread_local! {
@@ -537,6 +548,7 @@ impl Store {
             receipts,
             supplier_payments,
             closings: Vec::new(),
+            recordings: Vec::new(),
             next_quote_id: 101,
             next_order_id: 101,
             next_line_id,
@@ -546,6 +558,7 @@ impl Store {
             next_receipt_id,
             next_supplier_payment_id,
             next_closing_id: 1,
+            next_recording_id: 1,
         }
     }
 
@@ -583,6 +596,28 @@ impl Store {
 
     pub fn purchase_order_mut(&mut self, id: u64) -> Option<&mut PurchaseOrder> {
         self.purchase_orders.iter_mut().find(|order| order.id == id)
+    }
+
+    pub fn recording(&self, id: u64) -> Option<&Recording> {
+        self.recordings.iter().find(|recording| recording.id == id)
+    }
+
+    pub fn recording_mut(&mut self, id: u64) -> Option<&mut Recording> {
+        self.recordings
+            .iter_mut()
+            .find(|recording| recording.id == id)
+    }
+
+    pub fn recording_by_token(&self, token: &str) -> Option<&Recording> {
+        self.recordings
+            .iter()
+            .find(|recording| recording.token == token)
+    }
+
+    pub fn recording_token_exists(&self, token: &str) -> bool {
+        self.recordings
+            .iter()
+            .any(|recording| recording.token == token)
     }
 
     pub fn build_lines(&mut self, inputs: &[LineInput]) -> Result<Vec<LineItem>, String> {

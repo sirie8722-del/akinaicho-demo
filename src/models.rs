@@ -344,6 +344,105 @@ pub struct ClosingInput {
     pub month: String,
 }
 
+/// rrweb で記録した操作セッション。イベントは rrweb の JSON をそのまま保持する。
+#[derive(Clone, Debug, Serialize)]
+pub struct Recording {
+    pub id: u64,
+    /// 共有用の推測されにくい ID。URL にはこの値だけを使う。
+    pub token: String,
+    pub title: String,
+    pub message: String,
+    pub name: String,
+    pub email: String,
+    pub page: String,
+    pub user_agent: String,
+    pub viewport_width: u32,
+    pub viewport_height: u32,
+    pub started_at: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub duration_ms: u64,
+    pub event_bytes: usize,
+    /// `recording`（記録中）または `submitted`（お問い合わせ送信済み）。
+    pub status: String,
+    pub events: Vec<serde_json::Value>,
+}
+
+impl Recording {
+    pub fn summary(&self) -> RecordingSummary {
+        RecordingSummary {
+            id: self.id,
+            token: self.token.clone(),
+            title: self.title.clone(),
+            message: self.message.clone(),
+            page: self.page.clone(),
+            started_at: self.started_at.clone(),
+            created_at: self.created_at.clone(),
+            updated_at: self.updated_at.clone(),
+            duration_ms: self.duration_ms,
+            event_bytes: self.event_bytes,
+            event_count: self.events.len(),
+            status: self.status.clone(),
+        }
+    }
+}
+
+/// 一覧用。rrweb のイベント本体を含めない。
+#[derive(Clone, Debug, Serialize)]
+pub struct RecordingSummary {
+    pub id: u64,
+    pub token: String,
+    pub title: String,
+    pub message: String,
+    pub page: String,
+    pub started_at: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub duration_ms: u64,
+    pub event_bytes: usize,
+    pub event_count: usize,
+    pub status: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RecordingStartInput {
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub page: Option<String>,
+    #[serde(default)]
+    pub started_at: Option<String>,
+    #[serde(default)]
+    pub user_agent: Option<String>,
+    #[serde(default)]
+    pub viewport_width: Option<u32>,
+    #[serde(default)]
+    pub viewport_height: Option<u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RecordingEventsInput {
+    #[serde(default)]
+    pub events: Vec<serde_json::Value>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RecordingFinishInput {
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub message: Option<String>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub email: Option<String>,
+    #[serde(default)]
+    pub duration_ms: Option<u64>,
+    /// 記録終了時点の画面（`#/quotes/new` など）。
+    #[serde(default)]
+    pub page: Option<String>,
+}
+
 pub fn round_yen(value: f64) -> i64 {
     value.round() as i64
 }
@@ -362,6 +461,14 @@ pub fn totals(lines: &[LineItem]) -> (i64, i64, i64) {
 
 pub fn today() -> String {
     jst_date_from_ms(js_sys::Date::now())
+}
+
+/// 現在時刻の ISO 8601 文字列（UTC）。操作記録の作成・更新時刻に使う。
+pub fn now_iso() -> String {
+    js_sys::Date::new_0()
+        .to_iso_string()
+        .as_string()
+        .unwrap_or_default()
 }
 
 /// 今日から `days` 日前の日付（YYYY-MM-DD）。デモデータの生成用。

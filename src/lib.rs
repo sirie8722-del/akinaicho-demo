@@ -5,6 +5,7 @@ mod guard;
 mod metrics;
 mod models;
 mod print;
+mod recording;
 mod reports;
 mod service;
 mod store;
@@ -13,6 +14,13 @@ const INDEX_HTML: &str = include_str!("index.html");
 const STYLES_CSS: &str = include_str!("styles.css");
 const LEDGER_CSS: &str = include_str!("ledger.css");
 const APP_JS: &str = include_str!("app.js");
+const RECORDER_JS: &str = include_str!("recorder.js");
+const REPLAY_HTML: &str = include_str!("replay.html");
+const REPLAY_JS: &str = include_str!("replay.js");
+const REPLAY_CSS: &str = include_str!("replay.css");
+const RRWEB_JS: &str = include_str!("vendor/rrweb.min.js");
+const RRWEB_PLAYER_JS: &str = include_str!("vendor/rrweb-player.min.js");
+const RRWEB_PLAYER_CSS: &str = include_str!("vendor/rrweb-player.css");
 
 #[event(fetch)]
 async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
@@ -32,6 +40,26 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get("/app.js", |_, _| {
             static_asset(APP_JS, "application/javascript; charset=utf-8")
         })
+        .get("/recorder.js", |_, _| {
+            static_asset(RECORDER_JS, "application/javascript; charset=utf-8")
+        })
+        .get("/rrweb.js", |_, _| {
+            static_asset(RRWEB_JS, "application/javascript; charset=utf-8")
+        })
+        .get("/rrweb-player.js", |_, _| {
+            static_asset(RRWEB_PLAYER_JS, "application/javascript; charset=utf-8")
+        })
+        .get("/rrweb-player.css", |_, _| {
+            static_asset(RRWEB_PLAYER_CSS, "text/css; charset=utf-8")
+        })
+        .get("/replay.js", |_, _| {
+            static_asset(REPLAY_JS, "application/javascript; charset=utf-8")
+        })
+        .get("/replay.css", |_, _| {
+            static_asset(REPLAY_CSS, "text/css; charset=utf-8")
+        })
+        // 操作記録の再生ページ（rrweb Replayer）
+        .get("/replay/:token", |_, _| Response::from_html(REPLAY_HTML))
         .get("/api/health", |_, _| {
             let mut res = Response::from_json(&serde_json::json!({
                 "status": "ok",
@@ -86,6 +114,14 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         .get("/api/closings/preview", api::preview_closing)
         .get("/api/closings", api::list_closings)
         .post_async("/api/closings", api::run_closing)
+        // 操作記録・お問い合わせ（rrweb）
+        .get("/api/recordings", recording::list)
+        .post_async("/api/recordings", recording::create)
+        .post_async("/api/recordings/:id/events", recording::append_events)
+        .post_async("/api/recordings/:id/finish", recording::finish)
+        .delete("/api/recordings/:id", recording::delete)
+        // 共有トークンで取得（再生ページ用）
+        .get("/api/replay/:token", recording::get_by_token)
         // 集計
         .get("/api/reports/summary", api::report_summary)
         .get("/api/reports/order-remaining", api::report_order_remaining)
@@ -154,7 +190,28 @@ fn apply_common_headers(path: &str, res: &mut Response) {
         return;
     }
 
-    if matches!(path, "/" | "/styles.css" | "/ledger.css" | "/app.js") {
+    if path.starts_with("/replay/") {
+        let _ = headers.set("cache-control", "no-store");
+        let _ = headers.set("x-robots-tag", "noindex");
+        let _ = headers.set(
+            "content-security-policy",
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'self' data: blob:; base-uri 'none'; frame-ancestors 'self'",
+        );
+        return;
+    }
+
+    if matches!(
+        path,
+        "/" | "/styles.css"
+            | "/ledger.css"
+            | "/app.js"
+            | "/recorder.js"
+            | "/rrweb.js"
+            | "/rrweb-player.js"
+            | "/rrweb-player.css"
+            | "/replay.js"
+            | "/replay.css"
+    ) {
         let _ = headers.set("cache-control", "no-cache");
         let _ = headers.set(
             "content-security-policy",

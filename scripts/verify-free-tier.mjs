@@ -376,6 +376,95 @@ async function main() {
   await json(`/api/quotes/${quote.id}`, { method: "DELETE" });
   console.log("後片付け          : 受注・見積を削除\n");
 
+  // --- 操作記録（rrweb）とお問い合わせ --------------------------------------
+  console.log("--- 操作記録・お問い合わせ");
+  const recordingStart = Date.now();
+  const recording = await postJson("/api/recordings", {
+    page: "#/quotes",
+    started_at: new Date(recordingStart).toISOString(),
+    user_agent: "verify-free-tier",
+    viewport_width: 1280,
+    viewport_height: 800,
+  });
+  if (recording.res.status !== 201 || !recording.body.token) {
+    throw new Error("操作記録を作成できません");
+  }
+
+  const snapshotEvent = {
+    type: 2,
+    timestamp: recordingStart + 1,
+    data: {
+      node: {
+        type: 0,
+        id: 1,
+        childNodes: [
+          {
+            type: 2,
+            id: 2,
+            tagName: "html",
+            attributes: {},
+            childNodes: [
+              {
+                type: 2,
+                id: 3,
+                tagName: "body",
+                attributes: {},
+                childNodes: [{ type: 3, id: 4, textContent: "verify" }],
+              },
+            ],
+          },
+        ],
+      },
+    },
+  };
+  const clickEvent = {
+    type: 3,
+    timestamp: recordingStart + 500,
+    data: { source: 2, type: 2, id: 3, x: 10, y: 20 },
+  };
+  const appended = await postJson(`/api/recordings/${recording.body.id}/events`, {
+    events: [snapshotEvent, clickEvent],
+  });
+  if (appended.body.event_count !== 2) {
+    throw new Error("操作記録のイベントを保存できません");
+  }
+
+  const finished = await postJson(`/api/recordings/${recording.body.id}/finish`, {
+    title: "検証用の操作記録",
+    name: "検証",
+    email: "verify@example.com",
+    message: "見積一覧を開くまでの操作を記録しました。",
+    duration_ms: 500,
+    page: "#/quotes",
+  });
+  if (finished.body.status !== "submitted") {
+    throw new Error("操作記録を送信済みにできません");
+  }
+
+  const recordings = (await json("/api/recordings")).body;
+  if (!recordings.some((item) => item.id === recording.body.id)) {
+    throw new Error("操作記録の一覧に表示されません");
+  }
+  if (recordings.some((item) => "email" in item || "name" in item)) {
+    throw new Error("操作記録の一覧に連絡先が含まれています");
+  }
+
+  const replayData = (await json(`/api/replay/${recording.body.token}`)).body;
+  if (replayData.events.length !== 2 || replayData.message === "") {
+    throw new Error("共有トークンで操作記録を取得できません");
+  }
+
+  const replayPage = await request(`/replay/${recording.body.token}`);
+  if (!replayPage.res.ok || !replayPage.text.includes("操作記録の再生")) {
+    throw new Error("操作記録の再生ページを表示できません");
+  }
+
+  await json(`/api/recordings/${recording.body.id}`, { method: "DELETE" });
+  console.log(
+    `操作記録          : 作成 #${recording.body.id} / イベント ${appended.body.event_count} 件 / ` +
+      `再生 ${replayPage.text.length} bytes / 削除 OK\n`
+  );
+
   // --- CRUD を繰り返してメモリが増え続けないか確認 ---------------------------
   const before = (await json("/api/diagnostics")).body.measured.wasm_memory_mib;
   for (let i = 0; i < 20; i += 1) {
