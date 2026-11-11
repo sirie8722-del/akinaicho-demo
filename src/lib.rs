@@ -218,6 +218,11 @@ fn apply_common_headers(path: &str, res: &mut Response) {
             "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'self'",
         );
     }
+
+    // rrweb の配布ファイルはデプロイ直後の 404 をキャッシュしないよう no-store にする。
+    if matches!(path, "/rrweb.js" | "/rrweb-player.js" | "/rrweb-player.css") {
+        let _ = headers.set("cache-control", "no-store");
+    }
 }
 
 /// 無料枠の上限と、このリクエストで観測した値を返す。

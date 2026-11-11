@@ -112,24 +112,53 @@
 
   // ---- rrweb の遅延読み込み -------------------------------------------------
 
-  function loadRrweb() {
-    if (window.rrweb && typeof window.rrweb.record === "function") {
-      return Promise.resolve(window.rrweb);
-    }
+  const RRWEB_VERSION = "2.2.2";
+
+  function loadScript(src) {
     return new Promise((resolve, reject) => {
-      const existing = document.querySelector('script[src="/rrweb.js"]');
-      if (existing) {
-        existing.addEventListener("load", () => resolve(window.rrweb));
-        existing.addEventListener("error", () => reject(new Error("rrweb を読み込めませんでした。")));
-        return;
-      }
       const script = document.createElement("script");
-      script.src = "/rrweb.js";
+      script.src = src;
       script.async = true;
-      script.onload = () => resolve(window.rrweb);
-      script.onerror = () => reject(new Error("rrweb を読み込めませんでした。"));
+      script.dataset.recorderRrweb = "1";
+      script.onload = () => {
+        if (window.rrweb && typeof window.rrweb.record === "function") {
+          resolve(window.rrweb);
+          return;
+        }
+        script.remove();
+        reject(new Error("rrweb の初期化に失敗しました。"));
+      };
+      script.onerror = () => {
+        script.remove();
+        reject(new Error("rrweb を読み込めませんでした。"));
+      };
       document.head.appendChild(script);
     });
+  }
+
+  async function loadRrweb() {
+    if (window.rrweb && typeof window.rrweb.record === "function") {
+      return window.rrweb;
+    }
+
+    // デプロイ直後の古い 404 キャッシュを避けるため、バージョン付き URL で読む。
+    // 失敗した場合はキャッシュバスターを変えて一度だけ再試行する。
+    const existing = document.querySelector("script[data-recorder-rrweb]");
+    if (existing) existing.remove();
+    const urls = [
+      `/rrweb.js?v=${RRWEB_VERSION}`,
+      `/rrweb.js?v=${RRWEB_VERSION}&retry=${Date.now()}`,
+    ];
+    let lastError = null;
+    for (const url of urls) {
+      try {
+        return await loadScript(url);
+      } catch (error) {
+        lastError = error;
+        await new Promise((resolve) => setTimeout(resolve, 600));
+      }
+    }
+    throw lastError || new Error("rrweb を読み込めませんでした。");
   }
 
   // ---- ウィジェット ---------------------------------------------------------
