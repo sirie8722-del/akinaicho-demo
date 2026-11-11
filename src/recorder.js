@@ -154,7 +154,6 @@
           <span data-recorder-time>00:00</span>
           <span data-recorder-events>0 イベント</span>
         </p>
-        <p class="recorder-note">操作を記録しています。お問い合わせしたい操作が終わったら「記録を停止」を押してください。</p>
         <p class="recorder-hint" data-recorder-error hidden></p>
         <div class="recorder-actions">
           <button type="button" class="primary" data-recorder-stop>記録を停止</button>
@@ -198,6 +197,15 @@
       </div>
     </section>
 
+    <div class="recorder-mini" data-recorder-mini hidden>
+      <button type="button" class="recorder-mini-status" data-recorder-mini-open aria-label="記録の詳細を開く">
+        <span class="recorder-dot" aria-hidden="true"></span>
+        <span data-recorder-mini-time>00:00</span>
+        <span class="recorder-mini-events" data-recorder-mini-events>0件</span>
+      </button>
+      <button type="button" class="recorder-mini-stop" data-recorder-mini-stop>停止</button>
+    </div>
+
     <button type="button" class="recorder-fab" data-recorder-fab aria-expanded="false" aria-controls="recorder-panel">
       <span class="recorder-fab-dot" aria-hidden="true"></span>
       <span data-recorder-fab-label>操作記録</span>
@@ -207,6 +215,9 @@
   const panel = widget.querySelector("#recorder-panel");
   const fab = widget.querySelector("[data-recorder-fab]");
   const fabLabel = widget.querySelector("[data-recorder-fab-label]");
+  const mini = widget.querySelector("[data-recorder-mini]");
+  const miniTime = widget.querySelector("[data-recorder-mini-time]");
+  const miniEvents = widget.querySelector("[data-recorder-mini-events]");
 
   function showView(view) {
     rec.view = view;
@@ -231,6 +242,12 @@
         : "操作記録";
     fabLabel.textContent = label;
     fab.classList.toggle("recording", rec.active);
+    fab.hidden = rec.active;
+    mini.hidden = !rec.active;
+    if (rec.active) {
+      miniTime.textContent = formatDuration(Date.now() - rec.startedAt);
+      miniEvents.textContent = `${rec.total}件`;
+    }
   }
 
   function updateClock() {
@@ -449,6 +466,8 @@
       }
 
       showView("recording");
+      // 記録中は大きなパネルを閉じ、右下のコンパクトなバーだけにする。
+      closePanel();
       updateClock();
       rec.tickTimer = setInterval(updateClock, 1000);
       rec.flushTimer = setInterval(() => {
@@ -483,6 +502,7 @@
     updateFab();
 
     showView("review");
+    openPanel();
     widget.querySelector("[data-recorder-summary]").textContent =
       `${formatDuration(rec.duration)} / ${rec.total} イベント / ${location.hash || "/"}`;
     const form = widget.querySelector('form[data-recorder-view="review"]');
@@ -674,6 +694,11 @@
   widget.querySelector("[data-recorder-close]").addEventListener("click", closePanel);
   widget.querySelector("[data-recorder-start]").addEventListener("click", startRecording);
   widget.querySelector("[data-recorder-stop]").addEventListener("click", () => stopRecording(false));
+  widget.querySelector("[data-recorder-mini-open]").addEventListener("click", () => {
+    if (rec.active) showView("recording");
+    openPanel();
+  });
+  widget.querySelector("[data-recorder-mini-stop]").addEventListener("click", () => stopRecording(false));
   widget.querySelectorAll("[data-recorder-cancel]").forEach((button) => {
     button.addEventListener("click", discardRecording);
   });

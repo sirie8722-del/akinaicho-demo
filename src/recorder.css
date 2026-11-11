@@ -1,0 +1,62 @@
+/* 操作記録ウィジェットの追加スタイル。styles.css の後に読み込む。 */
+
+.recorder-fab[hidden] {
+  display: none;
+}
+
+/* 記録中に表示するコンパクトバー */
+.recorder-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.22rem;
+  border-radius: 999px;
+  background: #0f172a;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.28);
+}
+
+.recorder-mini[hidden] {
+  display: none;
+}
+
+.recorder-mini-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.recorder-mini-status:hover {
+  background: rgb(255 255 255 / 0.12);
+}
+
+.recorder-mini-status .recorder-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+.recorder-mini-events {
+  color: #cbd5e1;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.recorder-mini-stop {
+  padding: 0.45rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.recorder-mini-stop:hover {
+  background: #b91c1c;
+}

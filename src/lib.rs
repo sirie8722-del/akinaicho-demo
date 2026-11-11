@@ -14,6 +14,7 @@ const INDEX_HTML: &str = include_str!("index.html");
 const STYLES_CSS: &str = include_str!("styles.css");
 const LEDGER_CSS: &str = include_str!("ledger.css");
 const APP_JS: &str = include_str!("app.js");
+const RECORDER_CSS: &str = include_str!("recorder.css");
 const RECORDER_JS: &str = include_str!("recorder.js");
 const REPLAY_HTML: &str = include_str!("replay.html");
 const REPLAY_JS: &str = include_str!("replay.js");
@@ -42,6 +43,9 @@ async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
         })
         // rrweb 本体を recorder.js に同梱する。別 URL のスクリプト読み込みを
         // ブロックするブラウザ拡張やキャッシュの影響を受けないようにするため。
+        .get("/recorder.css", |_, _| {
+            static_asset(RECORDER_CSS, "text/css; charset=utf-8")
+        })
         .get("/recorder.js", |_, _| {
             combined_asset(
                 &[RRWEB_JS, RECORDER_JS],
@@ -237,6 +241,7 @@ fn apply_common_headers(path: &str, res: &mut Response) {
         "/" | "/styles.css"
             | "/ledger.css"
             | "/app.js"
+            | "/recorder.css"
             | "/recorder.js"
             | "/rrweb.js"
             | "/rrweb-player.js"
